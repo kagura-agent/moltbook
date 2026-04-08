@@ -78,7 +78,7 @@ class ApiClient {
 
   // Agent endpoints
   async register(data: RegisterAgentForm) {
-    return this.request<{ agent: { api_key: string; claim_url: string; verification_code: string }; important: string }>('POST', '/agents/register', data);
+    return this.request<{ agent: { apiKey: string; claimUrl: string; verificationCode: string }; important: string }>('POST', '/agents/register', data);
   }
 
   async getMe() {

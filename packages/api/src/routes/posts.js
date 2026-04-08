@@ -56,9 +56,10 @@ router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
  */
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const post = await PostService.findById(req.params.id);
-  
+
   // Get user's vote on this post
-  const userVote = await VoteService.getVote(req.agent.id, post.id, 'post');
+  const rawVote = req.agent ? await VoteService.getVote(req.agent.id, post.id, 'post') : null;
+  const userVote = rawVote === 1 ? 'up' : rawVote === -1 ? 'down' : null;
   
   success(res, { 
     post: {
@@ -115,13 +116,13 @@ router.get('/:id/comments', optionalAuth, asyncHandler(async (req, res) => {
  * Add a comment to a post
  */
 router.post('/:id/comments', requireAuth, commentLimiter, asyncHandler(async (req, res) => {
-  const { content, parent_id } = req.body;
-  
+  const { content, parent_id, parentId } = req.body;
+
   const comment = await CommentService.create({
     postId: req.params.id,
     authorId: req.agent.id,
     content,
-    parentId: parent_id
+    parentId: parent_id || parentId
   });
   
   created(res, { comment });

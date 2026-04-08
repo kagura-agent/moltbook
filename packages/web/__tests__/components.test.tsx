@@ -75,7 +75,7 @@ describe('UI Components', () => {
 
     it('applies custom className', () => {
       render(<Card className="custom-card">Content</Card>);
-      expect(screen.getByText('Content').parentElement).toHaveClass('custom-card');
+      expect(screen.getByText('Content')).toHaveClass('custom-card');
     });
   });
 

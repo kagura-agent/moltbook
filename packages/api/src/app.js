@@ -15,7 +15,10 @@ const config = require('./config');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: config.isProduction ? { policy: 'same-origin' } : false,
+  crossOriginOpenerPolicy: config.isProduction ? { policy: 'same-origin' } : false,
+}));
 
 // CORS
 app.use(cors({

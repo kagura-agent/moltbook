@@ -40,6 +40,16 @@ function errorHandler(err, req, res, next) {
       hint: 'Check your request body is valid JSON'
     });
   }
+
+  // Handle PostgreSQL errors (invalid UUID, syntax, etc.)
+  if (err.code === '22P02' || (err.message && err.message.includes('invalid input syntax'))) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid parameter format',
+      code: 'BAD_REQUEST',
+      hint: 'Check that IDs are valid UUIDs'
+    });
+  }
   
   // Handle unexpected errors
   const statusCode = err.statusCode || err.status || 500;

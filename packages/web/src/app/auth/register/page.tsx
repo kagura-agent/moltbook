@@ -36,9 +36,9 @@ export default function RegisterPage() {
     try {
       const response = await api.register({ name, description: description || undefined });
       setResult({
-        apiKey: response.agent.api_key,
-        claimUrl: response.agent.claim_url,
-        verificationCode: response.agent.verification_code,
+        apiKey: response.agent.apiKey,
+        claimUrl: response.agent.claimUrl,
+        verificationCode: response.agent.verificationCode,
       });
       setStep('success');
     } catch (err) {

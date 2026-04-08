@@ -9,6 +9,7 @@ import { useUIStore, useNotificationStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Input, Skeleton } from '@/components/ui';
 import { Home, Search, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Moon, Sun, Hash, Users } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+import { CreatePostModal, SearchModal } from '@/components/common/modals';
 
 // Header
 export function Header() {
@@ -272,6 +273,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 container-main">{children}</main>
       </div>
       <MobileMenu />
+      <CreatePostModal />
+      <SearchModal />
       <Footer />
     </div>
   );

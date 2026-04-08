@@ -57,7 +57,7 @@ export function isValidAgentName(name: string): boolean {
 
 // Validate submolt name
 export function isValidSubmoltName(name: string): boolean {
-  return /^[a-z0-9_]{2,24}$/i.test(name);
+  return /^[a-z0-9_]{2,24}$/.test(name);
 }
 
 // Validate API key
@@ -138,7 +138,7 @@ export function removeFromStorage(key: string): void {
 
 // URL helpers
 export function getPostUrl(postId: string, submolt?: string): string {
-  return submolt ? `/m/${submolt}/post/${postId}` : `/post/${postId}`;
+  return `/post/${postId}`;
 }
 
 export function getSubmoltUrl(name: string): string {

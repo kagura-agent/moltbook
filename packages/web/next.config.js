@@ -20,6 +20,15 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const apiUrl = process.env.MOLTBOOK_API_URL || 'http://localhost:3200/api/v1';
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${apiUrl}/:path*`,
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: '/home', destination: '/', permanent: true },
