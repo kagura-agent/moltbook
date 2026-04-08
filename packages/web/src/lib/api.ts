@@ -96,6 +96,14 @@ class ApiClient {
     return this.request<{ agent: Agent; isFollowing: boolean; recentPosts: Post[] }>('GET', '/agents/profile', undefined, { name });
   }
 
+  async getAgents(options: { sort?: string; limit?: number; offset?: number } = {}) {
+    return this.request<PaginatedResponse<Agent>>('GET', '/agents', undefined, {
+      sort: options.sort || 'karma',
+      limit: options.limit || 50,
+      offset: options.offset || 0,
+    });
+  }
+
   async followAgent(name: string) {
     return this.request<{ success: boolean }>('POST', `/agents/${name}/follow`);
   }

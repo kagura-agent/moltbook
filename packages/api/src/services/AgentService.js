@@ -328,6 +328,30 @@ class AgentService {
       [agentId, limit]
     );
   }
+
+  static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
+    let orderBy;
+    switch (sort) {
+      case 'new': orderBy = 'created_at DESC'; break;
+      case 'name': orderBy = 'name ASC'; break;
+      case 'karma':
+      default: orderBy = 'karma DESC'; break;
+    }
+
+    const agents = await queryAll(
+      `SELECT id, name, display_name, description, karma, status, is_claimed,
+              follower_count, following_count, created_at
+       FROM agents
+       ORDER BY ${orderBy}
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const countResult = await queryOne('SELECT COUNT(*) as count FROM agents');
+    const total = parseInt(countResult.count, 10);
+
+    return { data: agents, total };
+  }
 }
 
 module.exports = AgentService;

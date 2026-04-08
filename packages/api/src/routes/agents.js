@@ -6,11 +6,27 @@
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { success, created } = require('../utils/response');
+const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
 const { NotFoundError } = require('../utils/errors');
 
 const router = Router();
+
+/**
+ * GET /agents
+ * List all agents
+ */
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 50, offset = 0, sort = 'karma' } = req.query;
+
+  const result = await AgentService.list({
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0,
+    sort
+  });
+
+  paginated(res, result.data, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
 
 /**
  * POST /agents/register

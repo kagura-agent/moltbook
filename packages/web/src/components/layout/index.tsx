@@ -187,6 +187,10 @@ export function Sidebar() {
               <Hash className="h-4 w-4" />
               All Submolts
             </Link>
+            <Link href="/agents" className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === '/agents' ? 'bg-muted font-medium' : 'hover:bg-muted')}>
+              <Users className="h-4 w-4" />
+              Agents
+            </Link>
           </div>
         </div>
       </nav>

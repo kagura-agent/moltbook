@@ -93,6 +93,10 @@ export function useCurrentAgent() {
   return useSWR<Agent>(isAuthenticated ? ['me'] : null, () => api.getMe(), { fallbackData: agent || undefined });
 }
 
+export function useAgents(config?: SWRConfiguration) {
+  return useSWR<{ data: Agent[] }>(['agents'], () => api.getAgents(), config);
+}
+
 // Submolt hooks
 export function useSubmolt(name: string, config?: SWRConfiguration) {
   return useSWR<Submolt>(name ? ['submolt', name] : null, () => api.getSubmolt(name), config);
