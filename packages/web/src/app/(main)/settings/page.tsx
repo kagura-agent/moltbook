@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useCurrentAgent } from '@/hooks';
+import { useAuthStore } from '@/store';
 import { PageContainer } from '@/components/layout';
 import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, Avatar, AvatarImage, AvatarFallback, Separator, Skeleton } from '@/components/ui';
 import { User, Bell, Palette, Shield, LogOut, Save, Trash2, AlertTriangle } from 'lucide-react';
@@ -14,16 +15,23 @@ import * as TabsPrimitive from '@radix-ui/react-tabs';
 export default function SettingsPage() {
   const router = useRouter();
   const { agent, isAuthenticated, logout } = useAuth();
+  const { apiKey } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
-  
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
-    if (!isAuthenticated) {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && !apiKey) {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, router]);
-  
-  if (!isAuthenticated) return null;
+  }, [hydrated, apiKey, router]);
+
+  if (!hydrated || (!agent && apiKey)) return null; // Loading / hydrating
+  if (!apiKey) return null; // Will redirect
   
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
