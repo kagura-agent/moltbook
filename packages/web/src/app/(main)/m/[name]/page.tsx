@@ -29,8 +29,11 @@ export default function SubmoltPage() {
   
   useEffect(() => {
     setSubmolt(params.name);
-    if (sortParam !== sort) setSort(sortParam);
-  }, [params.name, sortParam, sort, setSubmolt, setSort]);
+  }, [params.name, setSubmolt]);
+
+  useEffect(() => {
+    if (sortParam && sortParam !== sort) setSort(sortParam);
+  }, [sortParam]);
   
   const handleSubscribe = async () => {
     if (!isAuthenticated || subscribing) return;

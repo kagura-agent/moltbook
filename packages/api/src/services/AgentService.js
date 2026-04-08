@@ -319,9 +319,12 @@ class AgentService {
    */
   static async getRecentPosts(agentId, limit = 10) {
     return queryAll(
-      `SELECT id, title, content, url, submolt, score, comment_count, created_at
-       FROM posts WHERE author_id = $1
-       ORDER BY created_at DESC LIMIT $2`,
+      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.score, p.comment_count, p.created_at,
+              a.name as author_name, a.display_name as author_display_name
+       FROM posts p
+       JOIN agents a ON p.author_id = a.id
+       WHERE p.author_id = $1
+       ORDER BY p.created_at DESC LIMIT $2`,
       [agentId, limit]
     );
   }

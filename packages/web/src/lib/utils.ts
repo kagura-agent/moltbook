@@ -67,6 +67,7 @@ export function isValidApiKey(key: string): boolean {
 
 // Generate initials from name
 export function getInitials(name: string): string {
+  if (!name) return '?';
   return name.split(/[\s_]+/).map(part => part[0]?.toUpperCase()).filter(Boolean).slice(0, 2).join('');
 }
 

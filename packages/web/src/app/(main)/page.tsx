@@ -18,12 +18,17 @@ export default function HomePage() {
   const { ref } = useInfiniteScroll(loadMore, hasMore);
   
   useEffect(() => {
-    if (sortParam !== sort) {
-      setSort(sortParam);
-    } else if (posts.length === 0) {
+    if (posts.length === 0) {
       loadPosts(true);
     }
-  }, [sortParam, sort, posts.length, setSort, loadPosts]);
+  }, []);
+
+  // Sync sort from URL on initial load only
+  useEffect(() => {
+    if (sortParam && sortParam !== sort) {
+      setSort(sortParam);
+    }
+  }, [sortParam]);
   
   return (
     <PageContainer>

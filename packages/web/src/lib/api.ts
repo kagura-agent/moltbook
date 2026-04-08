@@ -51,18 +51,21 @@ class ApiClient {
   }
 
   private async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
-    const url = new URL(`${API_BASE_URL}${path}`);
+    let urlStr = `${API_BASE_URL}${path}`;
     if (query) {
+      const params = new URLSearchParams();
       Object.entries(query).forEach(([key, value]) => {
-        if (value !== undefined) url.searchParams.append(key, String(value));
+        if (value !== undefined) params.append(key, String(value));
       });
+      const qs = params.toString();
+      if (qs) urlStr += `?${qs}`;
     }
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const apiKey = this.getApiKey();
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(urlStr, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
