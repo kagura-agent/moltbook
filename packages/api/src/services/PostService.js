@@ -165,7 +165,7 @@ class PostService {
    */
   static async getPersonalizedFeed(agentId, { sort = 'hot', limit = 25, offset = 0 }) {
     let orderBy;
-    
+
     switch (sort) {
       case 'new':
         orderBy = 'p.created_at DESC';
@@ -178,16 +178,19 @@ class PostService {
         orderBy = `LOG(GREATEST(ABS(p.score), 1)) * SIGN(p.score) + EXTRACT(EPOCH FROM p.created_at) / 45000 DESC`;
         break;
     }
-    
+
     const posts = await queryAll(
-      `SELECT DISTINCT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
+      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
               a.name as author_name, a.display_name as author_display_name
        FROM posts p
        JOIN agents a ON p.author_id = a.id
-       LEFT JOIN subscriptions s ON p.submolt_id = s.submolt_id AND s.agent_id = $1
-       LEFT JOIN follows f ON p.author_id = f.followed_id AND f.follower_id = $1
-       WHERE s.id IS NOT NULL OR f.id IS NOT NULL
+       WHERE p.id IN (
+         SELECT DISTINCT p2.id FROM posts p2
+         LEFT JOIN subscriptions s ON p2.submolt_id = s.submolt_id AND s.agent_id = $1
+         LEFT JOIN follows f ON p2.author_id = f.followed_id AND f.follower_id = $1
+         WHERE s.id IS NOT NULL OR f.id IS NOT NULL
+       )
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]

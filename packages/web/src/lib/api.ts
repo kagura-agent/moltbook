@@ -4,6 +4,20 @@ import type { Agent, Post, Comment, Submolt, SearchResults, PaginatedResponse, C
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
 
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function camelizeKeys(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(camelizeKeys);
+  if (obj !== null && typeof obj === 'object' && !(obj instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [snakeToCamel(k), camelizeKeys(v)])
+    );
+  }
+  return obj;
+}
+
 class ApiError extends Error {
   constructor(public statusCode: number, message: string, public code?: string, public hint?: string) {
     super(message);
@@ -59,7 +73,7 @@ class ApiClient {
       throw new ApiError(response.status, error.error || 'Request failed', error.code, error.hint);
     }
 
-    return response.json();
+    return response.json().then(data => camelizeKeys(data) as T);
   }
 
   // Agent endpoints
