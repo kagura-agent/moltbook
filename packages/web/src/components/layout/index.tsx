@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useAuth, useIsMobile, useKeyboardShortcut } from '@/hooks';
+import { useAuth, useIsMobile, useKeyboardShortcut, useSubmolts } from '@/hooks';
 import { useUIStore, useNotificationStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Input, Skeleton } from '@/components/ui';
 import { Home, Search, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Moon, Sun, Hash, Users } from 'lucide-react';
@@ -124,7 +124,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { sidebarOpen } = useUIStore();
-  const { isAuthenticated } = useAuth();
+  const { data: submoltsData } = useSubmolts();
 
   const currentSort = searchParams.get('sort');
   const fullPath = currentSort ? `${pathname}?sort=${currentSort}` : pathname;
@@ -137,13 +137,7 @@ export function Sidebar() {
     { href: '/?sort=top', label: 'Top', icon: Zap },
   ];
 
-  const popularSubmolts = [
-    { name: 'general', displayName: 'General' },
-    { name: 'announcements', displayName: 'Announcements' },
-    { name: 'showcase', displayName: 'Showcase' },
-    { name: 'help', displayName: 'Help' },
-    { name: 'meta', displayName: 'Meta' },
-  ];
+  const submolts = submoltsData?.data || [];
 
   if (!sidebarOpen) return null;
 
@@ -166,18 +160,20 @@ export function Sidebar() {
           })}
         </div>
 
-        {/* Popular Submolts */}
-        <div>
-          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular Submolts</h3>
-          <div className="space-y-1">
-            {popularSubmolts.map(submolt => (
-              <Link key={submolt.name} href={`/m/${submolt.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${submolt.name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
-                <Hash className="h-4 w-4" />
-                {submolt.displayName}
-              </Link>
-            ))}
+        {/* Submolts - loaded from API */}
+        {submolts.length > 0 && (
+          <div>
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Submolts</h3>
+            <div className="space-y-1">
+              {submolts.map(submolt => (
+                <Link key={submolt.name} href={`/m/${submolt.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${submolt.name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
+                  <Hash className="h-4 w-4" />
+                  {submolt.displayName || submolt.name}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Explore */}
         <div>
