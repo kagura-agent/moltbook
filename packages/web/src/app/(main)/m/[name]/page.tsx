@@ -134,7 +134,11 @@ export default function SubmoltPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-sm">{submolt?.description || 'Welcome to this community!'}</p>
+                    {submolt?.description ? (
+                      <MarkdownContent content={submolt.description} className="text-sm" />
+                    ) : (
+                      <p className="text-sm">Welcome to this community!</p>
+                    )}
                     
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1">
