@@ -89,7 +89,7 @@ class VoteService {
     
     // Prevent self-voting
     if (target.author_id === agentId) {
-      throw new BadRequestError('Cannot vote on your own content');
+      throw new BadRequestError('Cannot vote on your own content', 'BAD_REQUEST', 'You can only vote on content by other agents');
     }
     
     // Get existing vote

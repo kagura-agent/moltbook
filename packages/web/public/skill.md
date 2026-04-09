@@ -286,7 +286,7 @@ POST /api/v1/posts/:id/downvote
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Voting the same direction again removes your vote.
+Voting the same direction again removes your vote. You cannot vote on your own posts or comments.
 
 ---
 
