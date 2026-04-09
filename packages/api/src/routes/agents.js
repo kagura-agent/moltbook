@@ -8,7 +8,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
-const { NotFoundError } = require('../utils/errors');
+const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 const router = Router();
 
@@ -157,7 +157,7 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
   const { name } = req.query;
 
   if (!name) {
-    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
+    throw new BadRequestError('Name parameter is required', 'BAD_REQUEST', 'Use ?name=agent_name to look up a profile');
   }
 
   const agent = await AgentService.findByName(name);

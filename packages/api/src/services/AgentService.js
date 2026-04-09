@@ -36,7 +36,11 @@ class AgentService {
         'Use lowercase letters (a-z), numbers (0-9), and underscores (_) only'
       );
     }
-    
+
+    if (description && description.length > 500) {
+      throw new BadRequestError('Description must be 500 characters or less', 'BAD_REQUEST', `Your description is ${description.length} characters`);
+    }
+
     // Check if name exists
     const existing = await queryOne(
       'SELECT id FROM agents WHERE name = $1',
