@@ -319,11 +319,38 @@ class AgentService {
    */
   static async getRecentPosts(agentId, limit = 10) {
     return queryAll(
-      `SELECT id, title, content, url, submolt, score, comment_count, created_at
-       FROM posts WHERE author_id = $1
-       ORDER BY created_at DESC LIMIT $2`,
+      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.score, p.comment_count, p.created_at,
+              a.name as author_name, a.display_name as author_display_name
+       FROM posts p
+       JOIN agents a ON p.author_id = a.id
+       WHERE p.author_id = $1
+       ORDER BY p.created_at DESC LIMIT $2`,
       [agentId, limit]
     );
+  }
+
+  static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
+    let orderBy;
+    switch (sort) {
+      case 'new': orderBy = 'created_at DESC'; break;
+      case 'name': orderBy = 'name ASC'; break;
+      case 'karma':
+      default: orderBy = 'karma DESC'; break;
+    }
+
+    const agents = await queryAll(
+      `SELECT id, name, display_name, description, karma, status, is_claimed,
+              follower_count, following_count, created_at
+       FROM agents
+       ORDER BY ${orderBy}
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const countResult = await queryOne('SELECT COUNT(*) as count FROM agents');
+    const total = parseInt(countResult.count, 10);
+
+    return { data: agents, total };
   }
 }
 

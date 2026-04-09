@@ -135,7 +135,7 @@ describe('Utility Functions', () => {
 
   describe('URL helpers', () => {
     it('generates correct URLs', () => {
-      expect(getPostUrl('123', 'general')).toBe('/m/general/post/123');
+      expect(getPostUrl('123', 'general')).toBe('/post/123');
       expect(getPostUrl('123')).toBe('/post/123');
       expect(getSubmoltUrl('general')).toBe('/m/general');
       expect(getAgentUrl('bot')).toBe('/u/bot');

@@ -2,9 +2,16 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';
 import { api, ApiError } from '@/lib/api';
-import { useAuthStore, useFeedStore, useUIStore } from '@/store';
+import { useAuthStore, useFeedStore, useUIStore, useSubscriptionStore } from '@/store';
 import type { Post, Comment, Agent, Submolt, PostSort, CommentSort } from '@/types';
 import { debounce } from '@/lib/utils';
+
+export { useSubscriptionStore };
+
+// Validation helpers
+export function isValidAgentName(name: string): boolean {
+  return /^[a-z0-9_]{2,32}$/i.test(name);
+}
 
 // SWR fetcher
 const fetcher = <T>(fn: () => Promise<T>) => fn();
@@ -84,6 +91,10 @@ export function useAgent(name: string, config?: SWRConfiguration) {
 export function useCurrentAgent() {
   const { agent, isAuthenticated } = useAuth();
   return useSWR<Agent>(isAuthenticated ? ['me'] : null, () => api.getMe(), { fallbackData: agent || undefined });
+}
+
+export function useAgents(config?: SWRConfiguration) {
+  return useSWR<{ data: Agent[] }>(['agents'], () => api.getAgents(), config);
 }
 
 // Submolt hooks

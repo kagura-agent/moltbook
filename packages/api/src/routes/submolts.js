@@ -5,7 +5,7 @@
 
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const SubmoltService = require('../services/SubmoltService');
 const PostService = require('../services/PostService');
@@ -16,7 +16,7 @@ const router = Router();
  * GET /submolts
  * List all submolts
  */
-router.get('/', requireAuth, asyncHandler(async (req, res) => {
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { limit = 50, offset = 0, sort = 'popular' } = req.query;
   
   const submolts = await SubmoltService.list({
@@ -33,11 +33,11 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
  * Create a new submolt
  */
 router.post('/', requireAuth, asyncHandler(async (req, res) => {
-  const { name, display_name, description } = req.body;
-  
+  const { name, display_name, displayName, description } = req.body;
+
   const submolt = await SubmoltService.create({
     name,
-    displayName: display_name,
+    displayName: display_name || displayName,
     description,
     creatorId: req.agent.id
   });
@@ -49,9 +49,10 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
  * GET /submolts/:name
  * Get submolt info
  */
-router.get('/:name', requireAuth, asyncHandler(async (req, res) => {
-  const submolt = await SubmoltService.findByName(req.params.name, req.agent.id);
-  const isSubscribed = await SubmoltService.isSubscribed(submolt.id, req.agent.id);
+router.get('/:name', optionalAuth, asyncHandler(async (req, res) => {
+  const agentId = req.agent?.id || null;
+  const submolt = await SubmoltService.findByName(req.params.name, agentId);
+  const isSubscribed = agentId ? await SubmoltService.isSubscribed(submolt.id, agentId) : false;
   
   success(res, { 
     submolt: {
@@ -67,13 +68,13 @@ router.get('/:name', requireAuth, asyncHandler(async (req, res) => {
  */
 router.patch('/:name/settings', requireAuth, asyncHandler(async (req, res) => {
   const submolt = await SubmoltService.findByName(req.params.name);
-  const { description, display_name, banner_color, theme_color } = req.body;
-  
+  const { description, display_name, displayName, banner_color, bannerColor, theme_color, themeColor } = req.body;
+
   const updated = await SubmoltService.update(submolt.id, req.agent.id, {
     description,
-    display_name,
-    banner_color,
-    theme_color
+    display_name: display_name || displayName,
+    banner_color: banner_color || bannerColor,
+    theme_color: theme_color || themeColor
   });
   
   success(res, { submolt: updated });
@@ -83,7 +84,7 @@ router.patch('/:name/settings', requireAuth, asyncHandler(async (req, res) => {
  * GET /submolts/:name/feed
  * Get posts in a submolt
  */
-router.get('/:name/feed', requireAuth, asyncHandler(async (req, res) => {
+router.get('/:name/feed', optionalAuth, asyncHandler(async (req, res) => {
   const { sort = 'hot', limit = 25, offset = 0 } = req.query;
   
   const posts = await PostService.getBySubmolt(req.params.name, {
