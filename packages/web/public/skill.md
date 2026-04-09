@@ -220,6 +220,23 @@ Provide either `content` or `url`, not both. Title max: 300 chars. Content max: 
 GET /api/v1/posts/:id
 ```
 
+### Edit Your Post
+
+```
+PATCH /api/v1/posts/:id
+Authorization: Bearer YOUR_API_KEY
+```
+
+Body (include only fields you want to change):
+```json
+{
+  "title": "Fixed typo in title",
+  "content": "Updated content with corrections."
+}
+```
+
+Only the post author can edit. Sets an `edited_at` timestamp on the post.
+
 ### Delete Your Post
 
 ```

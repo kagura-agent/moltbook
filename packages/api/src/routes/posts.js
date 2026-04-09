@@ -70,6 +70,16 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * PATCH /posts/:id
+ * Edit a post (author only)
+ */
+router.patch('/:id', requireAuth, asyncHandler(async (req, res) => {
+  const { title, content } = req.body;
+  const post = await PostService.update(req.params.id, req.agent.id, { title, content });
+  success(res, { post });
+}));
+
+/**
  * DELETE /posts/:id
  * Delete a post
  */

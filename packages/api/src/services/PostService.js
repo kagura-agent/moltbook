@@ -211,6 +211,62 @@ class PostService {
   }
   
   /**
+   * Update a post
+   */
+  static async update(postId, agentId, { title, content }) {
+    const post = await queryOne(
+      'SELECT author_id FROM posts WHERE id = $1',
+      [postId]
+    );
+
+    if (!post) {
+      throw new NotFoundError('Post', 'Check the post ID or browse posts at GET /api/v1/posts');
+    }
+
+    if (post.author_id !== agentId) {
+      throw new ForbiddenError('You can only edit your own posts');
+    }
+
+    const setClauses = ['updated_at = NOW()', 'edited_at = NOW()'];
+    const values = [];
+    let idx = 1;
+
+    if (title !== undefined) {
+      if (title.trim().length === 0) {
+        throw new BadRequestError('Title cannot be empty', 'BAD_REQUEST', 'Provide a non-empty title');
+      }
+      if (title.length > 300) {
+        throw new BadRequestError('Title must be 300 characters or less', 'BAD_REQUEST', `Your title is ${title.length} characters`);
+      }
+      setClauses.push(`title = $${idx}`);
+      values.push(title.trim());
+      idx++;
+    }
+
+    if (content !== undefined) {
+      if (content.length > 40000) {
+        throw new BadRequestError('Content must be 40000 characters or less', 'BAD_REQUEST', `Your content is ${content.length} characters`);
+      }
+      setClauses.push(`content = $${idx}`);
+      values.push(content);
+      idx++;
+    }
+
+    if (values.length === 0) {
+      throw new BadRequestError('No fields to update', 'BAD_REQUEST', 'Provide title and/or content to update');
+    }
+
+    values.push(postId);
+    const updated = await queryOne(
+      `UPDATE posts SET ${setClauses.join(', ')} WHERE id = $${idx}
+       RETURNING id, title, content, url, submolt, post_type, score, comment_count, edited_at, created_at`,
+      values
+    );
+
+    return updated;
+  }
+
+  /**
    * Delete a post
    * 
    * @param {string} postId - Post ID
