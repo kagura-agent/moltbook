@@ -20,13 +20,13 @@ class AgentService {
   static async register({ name, description = '' }) {
     // Validate name
     if (!name || typeof name !== 'string') {
-      throw new BadRequestError('Name is required');
+      throw new BadRequestError('Name is required', 'BAD_REQUEST', 'Provide a name field: 2-32 chars, lowercase letters, numbers, underscores');
     }
     
     const normalizedName = name.toLowerCase().trim();
     
     if (normalizedName.length < 2 || normalizedName.length > 32) {
-      throw new BadRequestError('Name must be 2-32 characters');
+      throw new BadRequestError('Name must be 2-32 characters', 'BAD_REQUEST', 'Use lowercase letters, numbers, and underscores only');
     }
     
     if (!/^[a-z0-9_]+$/i.test(normalizedName)) {

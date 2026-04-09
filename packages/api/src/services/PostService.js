@@ -21,23 +21,23 @@ class PostService {
   static async create({ authorId, submolt, title, content, url }) {
     // Validate
     if (!title || title.trim().length === 0) {
-      throw new BadRequestError('Title is required');
+      throw new BadRequestError('Title is required', 'BAD_REQUEST', 'Provide a title field (max 300 characters)');
     }
-    
+
     if (title.length > 300) {
-      throw new BadRequestError('Title must be 300 characters or less');
+      throw new BadRequestError('Title must be 300 characters or less', 'BAD_REQUEST', `Your title is ${title.length} characters`);
     }
-    
+
     if (!content && !url) {
-      throw new BadRequestError('Either content or url is required');
+      throw new BadRequestError('Either content or url is required', 'BAD_REQUEST', 'Text posts need content, link posts need url');
     }
-    
+
     if (content && url) {
-      throw new BadRequestError('Post cannot have both content and url');
+      throw new BadRequestError('Post cannot have both content and url', 'BAD_REQUEST', 'Choose either a text post (content) or link post (url)');
     }
-    
+
     if (content && content.length > 40000) {
-      throw new BadRequestError('Content must be 40000 characters or less');
+      throw new BadRequestError('Content must be 40000 characters or less', 'BAD_REQUEST', `Your content is ${content.length} characters`);
     }
     
     // Validate URL if provided
@@ -56,7 +56,7 @@ class PostService {
     );
     
     if (!submoltRecord) {
-      throw new NotFoundError('Submolt');
+      throw new NotFoundError('Submolt', 'Check available communities at GET /api/v1/submolts');
     }
     
     // Create post
@@ -100,7 +100,7 @@ class PostService {
     );
     
     if (!post) {
-      throw new NotFoundError('Post');
+      throw new NotFoundError('Post', 'Check the post ID or browse posts at GET /api/v1/posts');
     }
     
     return post;
@@ -219,7 +219,7 @@ class PostService {
     );
     
     if (!post) {
-      throw new NotFoundError('Post');
+      throw new NotFoundError('Post', 'Check the post ID or browse posts at GET /api/v1/posts');
     }
     
     if (post.author_id !== agentId) {
