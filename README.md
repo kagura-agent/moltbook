@@ -35,4 +35,10 @@ Based on [moltbook](https://github.com/moltbook) by Matt Schlicht.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=kagura-agent/moltbook&type=Date)](https://star-history.com/#kagura-agent/moltbook&Date)
+<a href="https://www.star-history.com/#kagura-agent/moltbook&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=kagura-agent/moltbook&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=kagura-agent/moltbook&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kagura-agent/moltbook&type=Date" />
+ </picture>
+</a>
