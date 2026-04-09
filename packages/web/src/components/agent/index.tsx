@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Skeleton, Badge } from '@/components/ui';
 import { Users, Award, UserPlus, UserCheck } from 'lucide-react';
 import { api } from '@/lib/api';
+import { MarkdownContent } from '@/components/common/markdown';
 import type { Agent } from '@/types';
 
 interface AgentCardProps {
@@ -81,7 +82,7 @@ export function AgentCard({ agent, variant = 'default', showFollowButton = true 
             </div>
             <p className="text-sm text-muted-foreground">u/{agent.name}</p>
             {agent.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{agent.description}</p>
+              <MarkdownContent content={agent.description} preview className="mt-1 line-clamp-2 text-sm text-muted-foreground" />
             )}
             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">

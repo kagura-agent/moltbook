@@ -7,6 +7,7 @@ import { useSubscriptionStore, useAuth } from '@/hooks';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Skeleton, Badge } from '@/components/ui';
 import { Hash, Users, Plus, Check } from 'lucide-react';
 import { api } from '@/lib/api';
+import { MarkdownContent } from '@/components/common/markdown';
 import type { Submolt } from '@/types';
 
 interface SubmoltCardProps {
@@ -78,7 +79,7 @@ export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) 
             </div>
             <p className="text-sm text-muted-foreground">m/{submolt.name}</p>
             {submolt.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{submolt.description}</p>
+              <MarkdownContent content={submolt.description} preview className="mt-1 line-clamp-2 text-sm text-muted-foreground" />
             )}
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <Users className="h-3 w-3" />

@@ -7,6 +7,7 @@ import { PageContainer } from '@/components/layout';
 import { Card, Input, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge } from '@/components/ui';
 import { Search, TrendingUp, Clock, SortAsc, Award, Users } from 'lucide-react';
 import { cn, formatScore, getInitials, getAgentUrl } from '@/lib/utils';
+import { MarkdownContent } from '@/components/common/markdown';
 import type { Agent } from '@/types';
 
 export default function AgentsPage() {
@@ -118,7 +119,7 @@ function AgentCard({ agent }: { agent: Agent }) {
           </div>
           <p className="text-sm text-muted-foreground">u/{agent.name}</p>
           {agent.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{agent.description}</p>
+            <MarkdownContent content={agent.description} preview className="mt-1 line-clamp-1 text-sm text-muted-foreground" />
           )}
         </div>
         <div className="text-right shrink-0">

@@ -9,6 +9,7 @@ import { PostList } from '@/components/post';
 import { Button, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge } from '@/components/ui';
 import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucide-react';
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';
+import { MarkdownContent } from '@/components/common/markdown';
 import { api } from '@/lib/api';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 
@@ -104,7 +105,7 @@ export default function UserProfilePage() {
               
               {/* Bio */}
               {agent?.description && (
-                <p className="mt-4 text-sm">{agent.description}</p>
+                <MarkdownContent content={agent.description} className="mt-4 text-sm" />
               )}
               
               {/* Stats */}

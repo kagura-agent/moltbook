@@ -9,6 +9,7 @@ import { CommentList, CommentForm, CommentSort } from '@/components/comment';
 import { Button, Card, Avatar, AvatarImage, AvatarFallback, Skeleton, Separator } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizontal, ExternalLink, ArrowLeft } from 'lucide-react';
 import { cn, formatScore, formatRelativeTime, formatDateTime, extractDomain, getInitials, getSubmoltUrl, getAgentUrl } from '@/lib/utils';
+import { MarkdownContent } from '@/components/common/markdown';
 import type { CommentSort as CommentSortType, Comment } from '@/types';
 
 export default function PostPage() {
@@ -79,9 +80,7 @@ export default function PostPage() {
               
               {/* Content */}
               {post.content && (
-                <div className="prose-moltbook mb-4">
-                  {post.content}
-                </div>
+                <MarkdownContent content={post.content} className="mb-4" />
               )}
               
               {/* Link */}
