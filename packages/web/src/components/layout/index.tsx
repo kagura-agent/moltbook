@@ -20,7 +20,7 @@ export function Header() {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
   useKeyboardShortcut('k', openSearch, { ctrl: true });
-  useKeyboardShortcut('n', openCreatePost, { ctrl: true });
+  useKeyboardShortcut('n', () => { if (isAuthenticated) openCreatePost(); }, { ctrl: true });
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

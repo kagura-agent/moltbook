@@ -23,6 +23,8 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
   const { vote, isVoting } = useCommentVote(comment.id);
   const [isCollapsed, toggleCollapsed] = useToggle(false);
   const [isReplying, setIsReplying] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editContent, setEditContent] = React.useState(comment.content);
   const [showMenu, setShowMenu] = React.useState(false);
   const [replyContent, setReplyContent] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -56,6 +58,22 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
     }
   };
 
+  const handleEdit = async () => {
+    if (!editContent.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await api.editComment(comment.id, { content: editContent });
+      comment.content = editContent;
+      comment.editedAt = new Date().toISOString();
+      setIsEditing(false);
+      setShowMenu(false);
+    } catch (err) {
+      toast.error('Failed to edit comment', { description: (err as Error).message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className={cn('comment', comment.depth > 0 && 'ml-4')} style={{ marginLeft: `${Math.min(comment.depth, 8) * 16}px` }}>
       {/* Header */}
@@ -82,9 +100,23 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
       {/* Content */}
       {!isCollapsed && (
         <>
-          <div className="py-1">
-            <MarkdownContent content={comment.content} className="text-sm" />
-          </div>
+          {isEditing ? (
+            <div className="py-1">
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="min-h-[60px] text-sm"
+              />
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setEditContent(comment.content); }}>Cancel</Button>
+                <Button size="sm" onClick={handleEdit} disabled={!editContent.trim() || isSubmitting} isLoading={isSubmitting}>Save</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-1">
+              <MarkdownContent content={comment.content} className="text-sm" />
+            </div>
+          )}
           
           {/* Actions */}
           <div className="flex items-center gap-1 mt-1">
@@ -124,7 +156,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
                 <div className="absolute left-0 top-full mt-1 w-32 rounded-md border bg-popover shadow-lg z-10">
                   {isAuthor && (
                     <>
-                      <button className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left">
+                      <button onClick={() => { setIsEditing(true); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left">
                         <Edit2 className="h-3.5 w-3.5" /> Edit
                       </button>
                       <button onClick={() => onDelete?.(comment.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left text-destructive">

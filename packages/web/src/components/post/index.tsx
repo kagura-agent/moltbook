@@ -97,7 +97,14 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
           
           {/* Content preview */}
           {!isCompact && post.content && (
-            <MarkdownContent content={post.content} preview maxLength={300} className="mt-2" />
+            <div className="mt-2">
+              <MarkdownContent content={post.content} preview maxLength={300} />
+              {post.content.length > 300 && (
+                <Link href={getPostUrl(post.id, post.submolt)} className="text-xs text-primary hover:underline mt-1 inline-block">
+                  Read more
+                </Link>
+              )}
+            </div>
           )}
           
           {/* Link preview */}

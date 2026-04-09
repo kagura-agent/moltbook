@@ -159,6 +159,10 @@ class ApiClient {
     return this.request<{ success: boolean }>('DELETE', `/comments/${id}`);
   }
 
+  async editComment(id: string, data: { content: string }) {
+    return this.request<{ comment: Comment }>('PATCH', `/comments/${id}`, data).then(r => r.comment);
+  }
+
   async upvoteComment(id: string) {
     return this.request<{ success: boolean; action: string }>('POST', `/comments/${id}/upvote`);
   }
