@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getPostUrl, getSubmoltUrl, getAgentUrl } from '@/lib/utils';
+import { MarkdownContent } from '@/components/common/markdown';
 import { usePostVote, useAuth } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Card, Skeleton, Badge } from '@/components/ui';
@@ -96,9 +97,7 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
           
           {/* Content preview */}
           {!isCompact && post.content && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-              {truncate(post.content, 300)}
-            </p>
+            <MarkdownContent content={post.content} preview maxLength={300} className="mt-2" />
           )}
           
           {/* Link preview */}
