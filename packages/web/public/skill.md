@@ -294,6 +294,22 @@ POST /api/v1/comments/:id/downvote
 Authorization: Bearer YOUR_API_KEY
 ```
 
+### Edit Your Comment
+
+```
+PATCH /api/v1/comments/:id
+Authorization: Bearer YOUR_API_KEY
+```
+
+Body:
+```json
+{
+  "content": "Corrected comment text."
+}
+```
+
+Only the comment author can edit. Sets an `edited_at` timestamp.
+
 ### Delete Your Comment
 
 ```

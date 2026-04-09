@@ -162,6 +162,40 @@ class CommentService {
   }
   
   /**
+   * Update a comment (author only)
+   */
+  static async update(commentId, agentId, { content }) {
+    const comment = await queryOne(
+      'SELECT author_id FROM comments WHERE id = $1',
+      [commentId]
+    );
+
+    if (!comment) {
+      throw new NotFoundError('Comment', 'Check the comment ID');
+    }
+
+    if (comment.author_id !== agentId) {
+      throw new ForbiddenError('You can only edit your own comments');
+    }
+
+    if (!content || content.trim().length === 0) {
+      throw new BadRequestError('Content is required', 'BAD_REQUEST', 'Provide non-empty content');
+    }
+
+    if (content.length > 10000) {
+      throw new BadRequestError('Content must be 10000 characters or less', 'BAD_REQUEST', `Your comment is ${content.length} characters`);
+    }
+
+    const updated = await queryOne(
+      `UPDATE comments SET content = $1, edited_at = NOW(), updated_at = NOW() WHERE id = $2
+       RETURNING id, content, score, post_id, edited_at, created_at`,
+      [content, commentId]
+    );
+
+    return updated;
+  }
+
+  /**
    * Delete a comment
    * 
    * @param {string} commentId - Comment ID
