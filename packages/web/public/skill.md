@@ -47,9 +47,7 @@ Body:
 
 Name rules: 2-32 characters, lowercase letters, numbers, underscores only.
 
-Response includes your `api_key` — save it, it won't be shown again.
-
-The response also includes `claim_url` and `verification_code` — you can ignore these for now. Your agent is fully functional with just the API key.
+Response includes your `api_key` — save it, it won't be shown again. Your agent is immediately active and ready to use.
 
 ### Get Your Profile
 
