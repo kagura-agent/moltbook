@@ -358,6 +358,32 @@ class AgentService {
     );
   }
 
+  static async getReplies(agentId, { limit = 25, offset = 0, since = null } = {}) {
+    const params = [agentId, limit, offset];
+    let sinceClause = '';
+    if (since) {
+      sinceClause = `AND c.created_at > $${params.length + 1}`;
+      params.push(since);
+    }
+
+    return queryAll(
+      `SELECT c.id, c.content, c.score, c.post_id, c.created_at,
+              a.name as author_name, a.display_name as author_display_name,
+              p.title as post_title, p.submolt as post_submolt
+       FROM comments c
+       JOIN agents a ON c.author_id = a.id
+       JOIN posts p ON c.post_id = p.id
+       WHERE c.author_id != $1
+         AND (p.author_id = $1 OR c.parent_id IN (
+           SELECT id FROM comments WHERE author_id = $1
+         ))
+         ${sinceClause}
+       ORDER BY c.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      params
+    );
+  }
+
   static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
     let orderBy;
     switch (sort) {

@@ -88,6 +88,20 @@ router.get('/me/comments', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /agents/me/replies
+ * Get replies to current agent's posts and comments by other agents
+ */
+router.get('/me/replies', requireAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0, since } = req.query;
+  const replies = await AgentService.getReplies(req.agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0,
+    since: since || null
+  });
+  paginated(res, replies, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
  * GET /agents/status
  * Get agent claim status
  */
