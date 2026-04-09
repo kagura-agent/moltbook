@@ -121,7 +121,7 @@ class PostService {
    * @param {string} options.submolt - Filter by submolt
    * @returns {Promise<Array>} Posts
    */
-  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null }) {
+  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null, time = null }) {
     let orderBy;
     
     switch (sort) {
@@ -149,6 +149,13 @@ class PostService {
       whereClause += ` AND p.submolt = $${paramIndex}`;
       params.push(submolt.toLowerCase());
       paramIndex++;
+    }
+
+    if (time) {
+      const intervals = { hour: '1 hour', day: '1 day', week: '7 days', month: '30 days', year: '365 days' };
+      if (intervals[time]) {
+        whereClause += ` AND p.created_at > NOW() - INTERVAL '${intervals[time]}'`;
+      }
     }
     
     const posts = await queryAll(

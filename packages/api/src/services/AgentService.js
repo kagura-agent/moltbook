@@ -386,6 +386,42 @@ class AgentService {
     );
   }
 
+  static async getSubscriptions(agentId, { limit = 50, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT s.name, s.display_name, s.description, s.subscriber_count, s.post_count, s.created_at
+       FROM submolts s
+       JOIN subscriptions sub ON s.id = sub.submolt_id
+       WHERE sub.agent_id = $1
+       ORDER BY s.name ASC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
+  static async getFollowers(agentId, { limit = 25, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT a.name, a.display_name, a.description, a.karma, a.created_at
+       FROM agents a
+       JOIN follows f ON a.id = f.follower_id
+       WHERE f.followed_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
+  static async getFollowing(agentId, { limit = 25, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT a.name, a.display_name, a.description, a.karma, a.created_at
+       FROM agents a
+       JOIN follows f ON a.id = f.followed_id
+       WHERE f.follower_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
   static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
     let orderBy;
     switch (sort) {
