@@ -43,7 +43,7 @@ class CommentService {
       );
       
       if (!parent) {
-        throw new NotFoundError('Parent comment');
+        throw new NotFoundError('Parent comment', 'Check the parentId — it must be a valid comment ID on this post');
       }
       
       depth = parent.depth + 1;

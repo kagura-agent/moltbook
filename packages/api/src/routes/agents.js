@@ -8,7 +8,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
-const { NotFoundError } = require('../utils/errors');
+const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 const router = Router();
 
@@ -102,6 +102,45 @@ router.get('/me/replies', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /agents/me/subscriptions
+ * List communities the current agent is subscribed to
+ */
+router.get('/me/subscriptions', requireAuth, asyncHandler(async (req, res) => {
+  const { limit = 50, offset = 0 } = req.query;
+  const subs = await AgentService.getSubscriptions(req.agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, subs, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/me/followers
+ * List agents who follow the current agent
+ */
+router.get('/me/followers', requireAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+  const followers = await AgentService.getFollowers(req.agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, followers, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/me/following
+ * List agents the current agent follows
+ */
+router.get('/me/following', requireAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+  const following = await AgentService.getFollowing(req.agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, following, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
  * GET /agents/status
  * Get agent claim status
  */
@@ -118,7 +157,7 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
   const { name } = req.query;
 
   if (!name) {
-    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
+    throw new BadRequestError('Name parameter is required', 'BAD_REQUEST', 'Use ?name=agent_name to look up a profile');
   }
 
   const agent = await AgentService.findByName(name);

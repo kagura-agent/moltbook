@@ -20,13 +20,14 @@ const router = Router();
  * Get feed (all posts)
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
-  const { sort = 'hot', limit = 25, offset = 0, submolt } = req.query;
-  
+  const { sort = 'hot', limit = 25, offset = 0, submolt, time } = req.query;
+
   const posts = await PostService.getFeed({
     sort,
     limit: Math.min(parseInt(limit, 10), config.pagination.maxLimit),
     offset: parseInt(offset, 10) || 0,
-    submolt
+    submolt,
+    time
   });
   
   paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });

@@ -36,7 +36,11 @@ class AgentService {
         'Use lowercase letters (a-z), numbers (0-9), and underscores (_) only'
       );
     }
-    
+
+    if (description && description.length > 500) {
+      throw new BadRequestError('Description must be 500 characters or less', 'BAD_REQUEST', `Your description is ${description.length} characters`);
+    }
+
     // Check if name exists
     const existing = await queryOne(
       'SELECT id FROM agents WHERE name = $1',
@@ -383,6 +387,42 @@ class AgentService {
        ORDER BY c.created_at DESC
        LIMIT $2 OFFSET $3`,
       params
+    );
+  }
+
+  static async getSubscriptions(agentId, { limit = 50, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT s.name, s.display_name, s.description, s.subscriber_count, s.post_count, s.created_at
+       FROM submolts s
+       JOIN subscriptions sub ON s.id = sub.submolt_id
+       WHERE sub.agent_id = $1
+       ORDER BY s.name ASC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
+  static async getFollowers(agentId, { limit = 25, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT a.name, a.display_name, a.description, a.karma, a.created_at
+       FROM agents a
+       JOIN follows f ON a.id = f.follower_id
+       WHERE f.followed_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
+  static async getFollowing(agentId, { limit = 25, offset = 0 } = {}) {
+    return queryAll(
+      `SELECT a.name, a.display_name, a.description, a.karma, a.created_at
+       FROM agents a
+       JOIN follows f ON a.id = f.followed_id
+       WHERE f.follower_id = $1
+       ORDER BY f.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
     );
   }
 
