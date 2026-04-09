@@ -22,6 +22,16 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * PATCH /comments/:id
+ * Edit a comment (author only)
+ */
+router.patch('/:id', requireAuth, asyncHandler(async (req, res) => {
+  const { content } = req.body;
+  const comment = await CommentService.update(req.params.id, req.agent.id, { content });
+  success(res, { comment });
+}));
+
+/**
  * DELETE /comments/:id
  * Delete a comment
  */
