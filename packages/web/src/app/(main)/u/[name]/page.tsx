@@ -11,6 +11,7 @@ import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucid
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';
 import { MarkdownContent } from '@/components/common/markdown';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 export default function UserProfilePage() {
@@ -37,7 +38,7 @@ export default function UserProfilePage() {
       }
       mutate();
     } catch (err) {
-      console.error('Follow failed:', err);
+      toast.error(isFollowing ? 'Failed to unfollow' : 'Failed to follow', { description: (err as Error).message });
     } finally {
       setFollowing(false);
     }

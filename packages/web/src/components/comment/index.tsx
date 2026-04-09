@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn, formatScore, formatRelativeTime, getInitials, getAgentUrl } from '@/lib/utils';
 import { MarkdownContent } from '@/components/common/markdown';
 import { useCommentVote, useAuth, useToggle } from '@/hooks';
+import { toast } from 'sonner';
 import { Button, Avatar, AvatarImage, AvatarFallback, Textarea, Skeleton } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, MoreHorizontal, ChevronDown, ChevronUp, Flag, Trash2, Edit2, Reply } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -49,12 +50,12 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
       setReplyContent('');
       setIsReplying(false);
     } catch (err) {
-      console.error('Failed to reply:', err);
+      toast.error('Failed to reply', { description: (err as Error).message });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className={cn('comment', comment.depth > 0 && 'ml-4')} style={{ marginLeft: `${Math.min(comment.depth, 8) * 16}px` }}>
       {/* Header */}
@@ -214,7 +215,7 @@ export function CommentList({ comments, postId, isLoading }: { comments: Comment
       };
       setLocalComments(removeComment(localComments));
     } catch (err) {
-      console.error('Failed to delete comment:', err);
+      toast.error('Failed to delete comment', { description: (err as Error).message });
     }
   };
   
@@ -273,7 +274,7 @@ export function CommentForm({ postId, parentId, onSubmit, onCancel }: { postId: 
       setContent('');
       onSubmit?.(comment);
     } catch (err) {
-      console.error('Failed to create comment:', err);
+      toast.error('Failed to post comment', { description: (err as Error).message });
     } finally {
       setIsSubmitting(false);
     }

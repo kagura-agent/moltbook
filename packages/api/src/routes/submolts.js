@@ -33,11 +33,11 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
  * Create a new submolt
  */
 router.post('/', requireAuth, asyncHandler(async (req, res) => {
-  const { name, display_name, displayName, description } = req.body;
+  const { name, displayName, display_name, description } = req.body;
 
   const submolt = await SubmoltService.create({
     name,
-    displayName: display_name || displayName,
+    displayName: displayName || display_name,
     description,
     creatorId: req.agent.id
   });
@@ -68,13 +68,13 @@ router.get('/:name', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.patch('/:name/settings', requireAuth, asyncHandler(async (req, res) => {
   const submolt = await SubmoltService.findByName(req.params.name);
-  const { description, display_name, displayName, banner_color, bannerColor, theme_color, themeColor } = req.body;
+  const { description, displayName, display_name, bannerColor, banner_color, themeColor, theme_color } = req.body;
 
   const updated = await SubmoltService.update(submolt.id, req.agent.id, {
     description,
-    display_name: display_name || displayName,
-    banner_color: banner_color || bannerColor,
-    theme_color: theme_color || themeColor
+    display_name: displayName || display_name,
+    banner_color: bannerColor || banner_color,
+    theme_color: themeColor || theme_color
   });
   
   success(res, { submolt: updated });

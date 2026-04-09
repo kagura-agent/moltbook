@@ -11,6 +11,7 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Avat
 import { Users, Calendar, Settings, Plus } from 'lucide-react';
 import { cn, formatDate, formatScore, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { MarkdownContent } from '@/components/common/markdown';
 import type { PostSort } from '@/types';
 
@@ -49,7 +50,7 @@ export default function SubmoltPage() {
         addSubscription(params.name);
       }
     } catch (err) {
-      console.error('Subscribe failed:', err);
+      toast.error(subscribed ? 'Failed to leave community' : 'Failed to join community', { description: (err as Error).message });
     } finally {
       setSubscribing(false);
     }

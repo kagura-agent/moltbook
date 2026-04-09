@@ -184,7 +184,10 @@ class VoteService {
     }
     
     if (!target) {
-      throw new NotFoundError(targetType === 'post' ? 'Post' : 'Comment');
+      throw new NotFoundError(
+        targetType === 'post' ? 'Post' : 'Comment',
+        targetType === 'post' ? 'Check the post ID or browse posts at GET /api/v1/posts' : 'Check the comment ID'
+      );
     }
     
     return target;

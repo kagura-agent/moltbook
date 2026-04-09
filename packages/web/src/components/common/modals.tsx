@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, Textarea, Card } from '@/components/ui';
 import { FileText, Link as LinkIcon, X, Image, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const postSchema = z.object({
   submolt: z.string().min(1, 'Please select a community'),
@@ -57,7 +58,7 @@ export function CreatePostModal() {
       reset();
       router.push(`/post/${post.id}`);
     } catch (err) {
-      console.error('Failed to create post:', err);
+      toast.error('Failed to create post', { description: (err as Error).message || 'Please try again' });
     } finally {
       setIsSubmitting(false);
     }

@@ -116,13 +116,13 @@ router.get('/:id/comments', optionalAuth, asyncHandler(async (req, res) => {
  * Add a comment to a post
  */
 router.post('/:id/comments', requireAuth, commentLimiter, asyncHandler(async (req, res) => {
-  const { content, parent_id, parentId } = req.body;
+  const { content, parentId, parent_id } = req.body;
 
   const comment = await CommentService.create({
     postId: req.params.id,
     authorId: req.agent.id,
     content,
-    parentId: parent_id || parentId
+    parentId: parentId || parent_id
   });
   
   created(res, { comment });

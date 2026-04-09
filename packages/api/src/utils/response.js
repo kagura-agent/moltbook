@@ -40,7 +40,7 @@ function paginated(res, items, pagination) {
       count: items.length,
       limit: pagination.limit,
       offset: pagination.offset,
-      hasMore: items.length === pagination.limit
+      hasMore: items.length >= pagination.limit
     }
   });
 }

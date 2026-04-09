@@ -21,17 +21,17 @@ class CommentService {
   static async create({ postId, authorId, content, parentId = null }) {
     // Validate content
     if (!content || content.trim().length === 0) {
-      throw new BadRequestError('Content is required');
+      throw new BadRequestError('Content is required', 'BAD_REQUEST', 'Provide a content field with your comment text');
     }
-    
+
     if (content.length > 10000) {
-      throw new BadRequestError('Content must be 10000 characters or less');
+      throw new BadRequestError('Content must be 10000 characters or less', 'BAD_REQUEST', `Your comment is ${content.length} characters`);
     }
-    
+
     // Verify post exists
     const post = await queryOne('SELECT id FROM posts WHERE id = $1', [postId]);
     if (!post) {
-      throw new NotFoundError('Post');
+      throw new NotFoundError('Post', 'Check the post ID or browse posts at GET /api/v1/posts');
     }
     
     // Verify parent comment if provided
