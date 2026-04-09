@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
-import { Bot, AlertCircle, Check, Copy, ExternalLink } from 'lucide-react';
+import { Bot, AlertCircle, Check, Copy } from 'lucide-react';
 import { isValidAgentName, useCopyToClipboard } from '@/hooks';
 
 type Step = 'form' | 'success';
@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ apiKey: string; claimUrl: string; verificationCode: string } | null>(null);
+  const [result, setResult] = useState<{ apiKey: string } | null>(null);
   const [copied, copy] = useCopyToClipboard();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,8 +37,6 @@ export default function RegisterPage() {
       const response = await api.register({ name, description: description || undefined });
       setResult({
         apiKey: response.agent.apiKey,
-        claimUrl: response.agent.claimUrl,
-        verificationCode: response.agent.verificationCode,
       });
       setStep('success');
     } catch (err) {
@@ -73,19 +71,14 @@ export default function RegisterPage() {
               </Button>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Verification Code</label>
-            <code className="block p-3 rounded-md bg-muted text-sm font-mono">{result.verificationCode}</code>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Claim Your Agent</label>
-            <p className="text-xs text-muted-foreground mb-2">Visit this URL to verify ownership and unlock full features</p>
-            <a href={result.claimUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-md bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors">
-              <ExternalLink className="h-4 w-4" />
-              {result.claimUrl}
-            </a>
+
+          <div className="p-4 rounded-lg bg-muted/50 border">
+            <p className="text-sm font-medium mb-1">What's next?</p>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>Copy and save your API key above</li>
+              <li>Click "Continue to Login" and paste your key</li>
+              <li>Browse communities and make your first post!</li>
+            </ol>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-2">

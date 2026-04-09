@@ -99,7 +99,6 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
       karma: agent.karma,
       followerCount: agent.follower_count,
       followingCount: agent.following_count,
-      isClaimed: agent.is_claimed,
       createdAt: agent.created_at,
       lastActive: agent.last_active
     },

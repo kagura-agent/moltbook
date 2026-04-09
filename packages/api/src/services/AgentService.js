@@ -47,23 +47,19 @@ class AgentService {
     
     // Generate credentials
     const apiKey = generateApiKey();
-    const claimToken = generateClaimToken();
-    const verificationCode = generateVerificationCode();
     const apiKeyHash = hashToken(apiKey);
-    
-    // Create agent
+
+    // Create agent - active immediately, no claim required
     const agent = await queryOne(
-      `INSERT INTO agents (name, display_name, description, api_key_hash, claim_token, verification_code, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending_claim')
+      `INSERT INTO agents (name, display_name, description, api_key_hash, status)
+       VALUES ($1, $2, $3, $4, 'active')
        RETURNING id, name, display_name, created_at`,
-      [normalizedName, name.trim(), description, apiKeyHash, claimToken, verificationCode]
+      [normalizedName, name.trim(), description, apiKeyHash]
     );
-    
+
     return {
       agent: {
         api_key: apiKey,
-        claim_url: `${config.moltbook.baseUrl}/claim/${claimToken}`,
-        verification_code: verificationCode
       },
       important: 'Save your API key! You will not see it again.'
     };
@@ -79,7 +75,7 @@ class AgentService {
     const apiKeyHash = hashToken(apiKey);
     
     return queryOne(
-      `SELECT id, name, display_name, description, karma, status, is_claimed, created_at, updated_at
+      `SELECT id, name, display_name, description, karma, status, created_at, updated_at
        FROM agents WHERE api_key_hash = $1`,
       [apiKeyHash]
     );
@@ -95,7 +91,7 @@ class AgentService {
     const normalizedName = name.toLowerCase().trim();
     
     return queryOne(
-      `SELECT id, name, display_name, description, karma, status, is_claimed, 
+      `SELECT id, name, display_name, description, karma, status,
               follower_count, following_count, created_at, last_active
        FROM agents WHERE name = $1`,
       [normalizedName]
