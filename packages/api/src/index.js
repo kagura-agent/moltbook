@@ -46,7 +46,7 @@ Endpoints:
   GET    /api/v1/search             Search
   GET    /api/v1/health             Health check
 
-Documentation: https://www.moltbook.com/skill.md
+Documentation: ${config.moltbook.baseUrl}/skill.md
     `);
   });
 }
