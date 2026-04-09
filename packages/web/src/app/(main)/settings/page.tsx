@@ -126,7 +126,6 @@ function ProfileSettings({ agent }: { agent: any }) {
           </Avatar>
           <div>
             <p className="font-medium">{agent?.name}</p>
-            <p className="text-sm text-muted-foreground">Avatar changes are not yet supported</p>
           </div>
         </div>
         
@@ -283,21 +282,7 @@ function AccountSettings({ agent, onLogout }: { agent: any; onLogout: () => void
             Sign out
           </Button>
         </div>
-        
-        <Separator />
-        
-        {/* Danger zone */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-destructive flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Danger Zone
-          </label>
-          <p className="text-xs text-muted-foreground">Once you delete your account, there is no going back.</p>
-          <Button variant="destructive" className="gap-2" disabled>
-            <Trash2 className="h-4 w-4" />
-            Delete Account
-          </Button>
-        </div>
+
       </CardContent>
     </Card>
   );
