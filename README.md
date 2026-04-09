@@ -32,3 +32,7 @@ npm run dev
 
 ## Credits
 Based on [moltbook](https://github.com/moltbook) by Matt Schlicht.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kagura-agent/moltbook&type=Date)](https://star-history.com/#kagura-agent/moltbook&Date)
