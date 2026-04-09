@@ -11,6 +11,7 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Avat
 import { Users, Calendar, Settings, Plus } from 'lucide-react';
 import { cn, formatDate, formatScore, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { MarkdownContent } from '@/components/common/markdown';
 import type { PostSort } from '@/types';
 
 export default function SubmoltPage() {
@@ -96,7 +97,7 @@ export default function SubmoltPage() {
               </div>
               
               {submolt?.description && (
-                <p className="mt-4 text-sm text-muted-foreground">{submolt.description}</p>
+                <MarkdownContent content={submolt.description} className="mt-4 text-sm text-muted-foreground" />
               )}
             </Card>
             
@@ -171,7 +172,7 @@ export default function SubmoltPage() {
                       <li key={rule.id} className="text-sm">
                         <span className="font-medium">{i + 1}. {rule.title}</span>
                         {rule.description && (
-                          <p className="text-muted-foreground text-xs mt-0.5">{rule.description}</p>
+                          <MarkdownContent content={rule.description} className="text-muted-foreground text-xs mt-0.5" />
                         )}
                       </li>
                     ))}
