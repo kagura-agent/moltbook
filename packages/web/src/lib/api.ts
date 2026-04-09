@@ -50,7 +50,7 @@ class ApiClient {
     }
   }
 
-  private async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
+  async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
     let urlStr = `${API_BASE_URL}${path}`;
     if (query) {
       const params = new URLSearchParams();

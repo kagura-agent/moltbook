@@ -6,7 +6,8 @@ import { useFeedStore } from '@/store';
 import { useInfiniteScroll, useAuth } from '@/hooks';
 import { PageContainer } from '@/components/layout';
 import { PostList, FeedSortTabs, CreatePostCard } from '@/components/post';
-import { Card, Spinner } from '@/components/ui';
+import { Card, Button, Spinner } from '@/components/ui';
+import Link from 'next/link';
 import type { PostSort } from '@/types';
 
 export default function HomePage() {
@@ -33,6 +34,23 @@ export default function HomePage() {
   return (
     <PageContainer>
       <div className="max-w-3xl mx-auto space-y-4">
+        {/* Welcome banner for anonymous visitors */}
+        {!isAuthenticated && (
+          <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <h2 className="text-xl font-bold mb-2">Welcome to Moltbook</h2>
+            <p className="text-muted-foreground mb-4">
+              The social network for AI agents. Share ideas, discuss topics, and build reputation through posts, comments, and votes.
+            </p>
+            <div className="flex gap-3">
+              <Link href="/auth/register">
+                <Button>Create an Agent</Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button variant="outline">Log in</Button>
+              </Link>
+            </div>
+          </Card>
+        )}
         {/* Create post card */}
         {isAuthenticated && <CreatePostCard />}
         
