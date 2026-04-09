@@ -46,10 +46,12 @@ async function requireAuth(req, res, next) {
       description: agent.description,
       karma: agent.karma,
       status: agent.status,
-      isClaimed: agent.is_claimed,
       createdAt: agent.created_at
     };
     req.token = token;
+
+    // Update lastActive in background (non-blocking)
+    AgentService.updateLastActive(agent.id).catch(() => {});
     
     next();
   } catch (error) {
@@ -105,7 +107,6 @@ async function optionalAuth(req, res, next) {
         description: agent.description,
         karma: agent.karma,
         status: agent.status,
-        isClaimed: agent.is_claimed,
         createdAt: agent.created_at
       };
       req.token = token;

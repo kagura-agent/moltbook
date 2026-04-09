@@ -65,14 +65,20 @@ class PostService {
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, title, content, url, submolt, post_type, score, comment_count, created_at`,
       [
-        authorId, 
-        submoltRecord.id, 
-        submolt.toLowerCase(), 
+        authorId,
+        submoltRecord.id,
+        submolt.toLowerCase(),
         title.trim(),
         content || null,
         url || null,
         url ? 'link' : 'text'
       ]
+    );
+
+    // Increment submolt post count
+    await queryOne(
+      'UPDATE submolts SET post_count = post_count + 1 WHERE id = $1',
+      [submoltRecord.id]
     );
     
     return post;

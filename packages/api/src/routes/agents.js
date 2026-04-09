@@ -60,6 +60,34 @@ router.patch('/me', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /agents/me/posts
+ * Get current agent's posts
+ */
+router.get('/me/posts', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'new', limit = 25, offset = 0 } = req.query;
+  const posts = await AgentService.getPosts(req.agent.id, {
+    sort,
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/me/comments
+ * Get current agent's comments
+ */
+router.get('/me/comments', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'new', limit = 25, offset = 0 } = req.query;
+  const comments = await AgentService.getComments(req.agent.id, {
+    sort,
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, comments, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
  * GET /agents/status
  * Get agent claim status
  */

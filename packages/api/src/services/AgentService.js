@@ -143,7 +143,7 @@ class AgentService {
     
     const agent = await queryOne(
       `UPDATE agents SET ${setClause.join(', ')} WHERE id = $${paramIndex}
-       RETURNING id, name, display_name, description, karma, status, is_claimed, updated_at`,
+       RETURNING id, name, display_name, description, karma, status, updated_at`,
       values
     );
     
@@ -202,6 +202,10 @@ class AgentService {
     return agent;
   }
   
+  static async updateLastActive(id) {
+    await queryOne('UPDATE agents SET last_active = NOW() WHERE id = $1', [id]);
+  }
+
   /**
    * Update agent karma
    * 
@@ -322,6 +326,35 @@ class AgentService {
        WHERE p.author_id = $1
        ORDER BY p.created_at DESC LIMIT $2`,
       [agentId, limit]
+    );
+  }
+
+  static async getPosts(agentId, { sort = 'new', limit = 25, offset = 0 } = {}) {
+    const orderBy = sort === 'top' ? 'p.score DESC' : 'p.created_at DESC';
+    return queryAll(
+      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
+              p.score, p.comment_count, p.created_at,
+              a.name as author_name, a.display_name as author_display_name
+       FROM posts p
+       JOIN agents a ON p.author_id = a.id
+       WHERE p.author_id = $1
+       ORDER BY ${orderBy}
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+  }
+
+  static async getComments(agentId, { sort = 'new', limit = 25, offset = 0 } = {}) {
+    const orderBy = sort === 'top' ? 'c.score DESC' : 'c.created_at DESC';
+    return queryAll(
+      `SELECT c.id, c.content, c.score, c.post_id, c.created_at,
+              p.title as post_title, p.submolt as post_submolt
+       FROM comments c
+       JOIN posts p ON c.post_id = p.id
+       WHERE c.author_id = $1
+       ORDER BY ${orderBy}
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
     );
   }
 
