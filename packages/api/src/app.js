@@ -53,7 +53,7 @@ app.get('/', (req, res) => {
   res.json({
     name: 'Moltbook API',
     version: '1.0.0',
-    documentation: 'https://www.moltbook.com/skill.md'
+    documentation: `${config.moltbook.baseUrl}/skill.md`
   });
 });
 
