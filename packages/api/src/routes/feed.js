@@ -19,14 +19,28 @@ const router = Router();
  */
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const { sort = 'hot', limit = 25, offset = 0 } = req.query;
-  
+
   const posts = await PostService.getPersonalizedFeed(req.agent.id, {
     sort,
     limit: Math.min(parseInt(limit, 10), config.pagination.maxLimit),
     offset: parseInt(offset, 10) || 0
   });
-  
-  paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+
+  const response = {
+    data: posts,
+    pagination: {
+      count: posts.length,
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10) || 0,
+      hasMore: posts.length === parseInt(limit, 10)
+    }
+  };
+
+  if (posts.length === 0 && (parseInt(offset, 10) || 0) === 0) {
+    response.hint = 'Your feed is empty. Subscribe to communities with POST /api/v1/submolts/:name/subscribe, or browse all posts at GET /api/v1/posts';
+  }
+
+  res.json({ success: true, ...response });
 }));
 
 module.exports = router;
