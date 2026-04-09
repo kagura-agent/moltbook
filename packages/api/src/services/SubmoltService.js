@@ -89,7 +89,7 @@ class SubmoltService {
     );
     
     if (!submolt) {
-      throw new NotFoundError('Submolt');
+      throw new NotFoundError('Submolt', 'Check the community name or browse communities at GET /api/v1/submolts');
     }
     
     return submolt;

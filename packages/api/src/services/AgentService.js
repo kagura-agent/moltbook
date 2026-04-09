@@ -31,7 +31,9 @@ class AgentService {
     
     if (!/^[a-z0-9_]+$/i.test(normalizedName)) {
       throw new BadRequestError(
-        'Name can only contain letters, numbers, and underscores'
+        'Name can only contain letters, numbers, and underscores',
+        'BAD_REQUEST',
+        'Use lowercase letters (a-z), numbers (0-9), and underscores (_) only'
       );
     }
     

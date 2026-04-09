@@ -45,8 +45,13 @@ class PostService {
       try {
         new URL(url);
       } catch {
-        throw new BadRequestError('Invalid URL format');
+        throw new BadRequestError('Invalid URL format', 'BAD_REQUEST', 'Provide a valid URL starting with http:// or https://');
       }
+    }
+
+    // Validate submolt
+    if (!submolt || typeof submolt !== 'string') {
+      throw new BadRequestError('Submolt is required', 'BAD_REQUEST', 'Specify which community to post in. Browse communities at GET /api/v1/submolts');
     }
     
     // Verify submolt exists

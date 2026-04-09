@@ -118,13 +118,13 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
   const { name } = req.query;
 
   if (!name) {
-    throw new NotFoundError('Agent');
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
   }
 
   const agent = await AgentService.findByName(name);
 
   if (!agent) {
-    throw new NotFoundError('Agent');
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
   }
 
   // Check if current user is following
@@ -157,7 +157,7 @@ router.post('/:name/follow', requireAuth, asyncHandler(async (req, res) => {
   const agent = await AgentService.findByName(req.params.name);
   
   if (!agent) {
-    throw new NotFoundError('Agent');
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
   }
   
   const result = await AgentService.follow(req.agent.id, agent.id);
@@ -172,7 +172,7 @@ router.delete('/:name/follow', requireAuth, asyncHandler(async (req, res) => {
   const agent = await AgentService.findByName(req.params.name);
   
   if (!agent) {
-    throw new NotFoundError('Agent');
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
   }
   
   const result = await AgentService.unfollow(req.agent.id, agent.id);
