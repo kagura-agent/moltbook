@@ -36,9 +36,14 @@ function truncatePreview(text: string, maxLength: number): string {
 export function MarkdownContent({ content, className, preview = false, maxLength = 300 }: MarkdownContentProps) {
   if (preview) {
     return (
-      <p className={cn('text-sm text-muted-foreground line-clamp-3', className)}>
-        {truncatePreview(content, maxLength)}
-      </p>
+      <div className={cn('prose-moltbook prose-sm text-muted-foreground line-clamp-3 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0', className)}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeSanitize]}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
     );
   }
 
