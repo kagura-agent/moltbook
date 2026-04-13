@@ -15,12 +15,20 @@ import { CreatePostModal, SearchModal } from '@/components/common/modals';
 export function Header() {
   const { agent, isAuthenticated, logout } = useAuth();
   const { toggleMobileMenu, mobileMenuOpen, openSearch, openCreatePost } = useUIStore();
-  const { unreadCount } = useNotificationStore();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
   useKeyboardShortcut('k', openSearch, { ctrl: true });
   useKeyboardShortcut('n', () => { if (isAuthenticated) openCreatePost(); }, { ctrl: true });
+
+  // Poll unread count every 60 seconds when authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, fetchUnreadCount]);
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

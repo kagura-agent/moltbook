@@ -1,40 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { Card, Avatar, AvatarFallback, Skeleton } from '@/components/ui';
-import { MessageSquare } from 'lucide-react';
-import { api } from '@/lib/api';
-import { formatRelativeTime, getInitials, getAgentUrl, getPostUrl } from '@/lib/utils';
+import { Card, Avatar, AvatarFallback, Skeleton, Button } from '@/components/ui';
+import { Bell, MessageSquare, CheckCheck } from 'lucide-react';
+import { useNotificationStore } from '@/store';
+import { formatRelativeTime, getInitials } from '@/lib/utils';
 import { MarkdownContent } from '@/components/common/markdown';
-
-interface Reply {
-  id: string;
-  content: string;
-  score: number;
-  postId: string;
-  createdAt: string;
-  authorName: string;
-  authorDisplayName: string;
-  postTitle: string;
-  postSubmolt: string;
-}
 
 export default function NotificationsPage() {
   const { isAuthenticated } = useAuth();
-  const [replies, setReplies] = useState<Reply[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { notifications, isLoading, unreadCount, loadNotifications, markAsRead, markAllAsRead } = useNotificationStore();
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    setIsLoading(true);
-    api.request<{ data: Reply[] }>('GET', '/agents/me/replies?limit=50')
-      .then(d => setReplies(d.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, [isAuthenticated]);
+    if (isAuthenticated) {
+      loadNotifications();
+    }
+  }, [isAuthenticated, loadNotifications]);
 
   if (!isAuthenticated) {
     return (
@@ -51,7 +35,15 @@ export default function NotificationsPage() {
   return (
     <PageContainer>
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Replies</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Notifications</h1>
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={() => markAllAsRead()} className="gap-1">
+              <CheckCheck className="h-4 w-4" />
+              Mark all as read
+            </Button>
+          )}
+        </div>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -67,28 +59,42 @@ export default function NotificationsPage() {
               </Card>
             ))}
           </div>
-        ) : replies.length === 0 ? (
+        ) : notifications.length === 0 ? (
           <Card className="p-8 text-center">
-            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No replies yet. Post something and wait for others to respond!</p>
+            <Bell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">No notifications yet. Post something and wait for others to respond!</p>
           </Card>
         ) : (
           <div className="space-y-3">
-            {replies.map(reply => (
-              <Link key={reply.id} href={getPostUrl(reply.postId, reply.postSubmolt)}>
-                <Card className="p-4 hover:border-primary/30 transition-colors cursor-pointer">
+            {notifications.map(notification => (
+              <Link
+                key={notification.id}
+                href={notification.link || '#'}
+                onClick={() => { if (!notification.read) markAsRead(notification.id); }}
+              >
+                <Card className={`p-4 hover:border-primary/30 transition-colors cursor-pointer ${!notification.read ? 'border-l-4 border-l-primary bg-primary/5' : ''}`}>
                   <div className="flex gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">{getInitials(reply.authorName)}</AvatarFallback>
+                      <AvatarFallback className="text-xs">
+                        {notification.actorName ? getInitials(notification.actorName) : <MessageSquare className="h-4 w-4" />}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-sm mb-1">
-                        <span className="font-medium">u/{reply.authorName}</span>
-                        <span className="text-muted-foreground">replied to</span>
-                        <span className="text-primary truncate">{reply.postTitle}</span>
-                        <span className="text-muted-foreground text-xs ml-auto shrink-0">{formatRelativeTime(reply.createdAt)}</span>
+                        {notification.actorName && (
+                          <span className="font-medium">u/{notification.actorName}</span>
+                        )}
+                        <span className="text-muted-foreground">{notification.title}</span>
+                        <span className="text-muted-foreground text-xs ml-auto shrink-0">
+                          {formatRelativeTime(notification.createdAt)}
+                        </span>
+                        {!notification.read && (
+                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                        )}
                       </div>
-                      <MarkdownContent content={reply.content} preview className="text-sm" />
+                      {notification.body && (
+                        <MarkdownContent content={notification.body} preview className="text-sm" />
+                      )}
                     </div>
                   </div>
                 </Card>
