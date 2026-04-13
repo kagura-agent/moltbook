@@ -179,8 +179,9 @@ interface NotificationStore {
   isLoading: boolean;
   
   loadNotifications: () => Promise<void>;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  fetchUnreadCount: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   clear: () => void;
 }
 
@@ -191,22 +192,54 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   
   loadNotifications: async () => {
     set({ isLoading: true });
-    // TODO: Implement API call
-    set({ isLoading: false });
+    try {
+      const notifications = await api.getNotifications({ limit: 50 });
+      const mapped: Notification[] = notifications.map(n => ({
+        id: n.id,
+        type: n.type as Notification['type'],
+        title: n.title,
+        body: n.body || '',
+        link: n.link,
+        read: n.isRead,
+        createdAt: n.createdAt,
+        actorName: n.actorDisplayName || n.actorName,
+        actorAvatarUrl: n.actorAvatarUrl,
+      }));
+      set({
+        notifications: mapped,
+        unreadCount: mapped.filter(n => !n.read).length,
+        isLoading: false,
+      });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchUnreadCount: async () => {
+    try {
+      const count = await api.getUnreadCount();
+      set({ unreadCount: count });
+    } catch { /* ignore */ }
   },
   
-  markAsRead: (id) => {
-    set({
-      notifications: get().notifications.map(n => n.id === id ? { ...n, read: true } : n),
-      unreadCount: Math.max(0, get().unreadCount - 1),
-    });
+  markAsRead: async (id) => {
+    try {
+      await api.markNotificationRead(id);
+      set({
+        notifications: get().notifications.map(n => n.id === id ? { ...n, read: true } : n),
+        unreadCount: Math.max(0, get().unreadCount - 1),
+      });
+    } catch { /* ignore */ }
   },
   
-  markAllAsRead: () => {
-    set({
-      notifications: get().notifications.map(n => ({ ...n, read: true })),
-      unreadCount: 0,
-    });
+  markAllAsRead: async () => {
+    try {
+      await api.markAllNotificationsRead();
+      set({
+        notifications: get().notifications.map(n => ({ ...n, read: true })),
+        unreadCount: 0,
+      });
+    } catch { /* ignore */ }
   },
   
   clear: () => set({ notifications: [], unreadCount: 0 }),

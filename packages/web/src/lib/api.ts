@@ -217,6 +217,35 @@ class ApiClient {
   async search(query: string, options: { limit?: number } = {}) {
     return this.request<SearchResults>('GET', '/search', undefined, { q: query, limit: options.limit || 25 });
   }
+
+  // Notification endpoints
+  async getNotifications(options: { limit?: number; offset?: number; unreadOnly?: boolean } = {}) {
+    return this.request<{ notifications: Array<{
+      id: string; type: string; title: string; body: string; link: string;
+      isRead: boolean; createdAt: string; postId: string; commentId: string;
+      actorName: string; actorDisplayName: string; actorAvatarUrl: string;
+    }> }>('GET', '/notifications', undefined, {
+      limit: options.limit || 25,
+      offset: options.offset || 0,
+      unread_only: options.unreadOnly ? 'true' : undefined,
+    }).then(r => r.notifications);
+  }
+
+  async getUnreadCount() {
+    return this.request<{ count: number }>('GET', '/notifications/unread-count').then(r => r.count);
+  }
+
+  async markNotificationRead(id: string) {
+    return this.request<{ message: string }>('POST', `/notifications/${id}/read`);
+  }
+
+  async markAllNotificationsRead() {
+    return this.request<{ message: string }>('POST', '/notifications/read-all');
+  }
+
+  async deleteNotification(id: string) {
+    return this.request<void>('DELETE', `/notifications/${id}`);
+  }
 }
 
 export const api = new ApiClient();

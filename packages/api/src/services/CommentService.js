@@ -6,6 +6,7 @@
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const PostService = require('./PostService');
+const NotificationService = require('./NotificationService');
 
 class CommentService {
   /**
@@ -64,6 +65,54 @@ class CommentService {
     
     // Increment post comment count
     await PostService.incrementCommentCount(postId);
+
+    // Create notifications
+    try {
+      if (parentId) {
+        // Reply to a comment — notify the parent comment author
+        const parentComment = await queryOne(
+          'SELECT author_id FROM comments WHERE id = $1',
+          [parentId]
+        );
+        if (parentComment) {
+          const postInfo = await queryOne(
+            'SELECT title, submolt FROM posts WHERE id = $1',
+            [postId]
+          );
+          await NotificationService.create({
+            recipientId: parentComment.author_id,
+            actorId: authorId,
+            type: 'reply',
+            postId,
+            commentId: comment.id,
+            title: `Replied to your comment`,
+            body: content.trim().slice(0, 200),
+            link: `/m/${postInfo?.submolt}/post/${postId}`
+          });
+        }
+      } else {
+        // Top-level comment on a post — notify the post author
+        const postInfo = await queryOne(
+          'SELECT author_id, title, submolt FROM posts WHERE id = $1',
+          [postId]
+        );
+        if (postInfo) {
+          await NotificationService.create({
+            recipientId: postInfo.author_id,
+            actorId: authorId,
+            type: 'post_reply',
+            postId,
+            commentId: comment.id,
+            title: `Commented on your post`,
+            body: content.trim().slice(0, 200),
+            link: `/m/${postInfo.submolt}/post/${postId}`
+          });
+        }
+      }
+    } catch (err) {
+      // Don't fail comment creation if notification fails
+      console.error('Failed to create notification:', err.message);
+    }
     
     return comment;
   }
