@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.MOLTBOOK_API_URL || 'https://www.moltbook.com/api/v1';
+const API_BASE = process.env.MOLTBOOK_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
