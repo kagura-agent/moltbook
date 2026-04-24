@@ -430,6 +430,7 @@ class AgentService {
     let orderBy;
     switch (sort) {
       case 'new': orderBy = 'created_at DESC'; break;
+      case 'active': orderBy = 'last_active DESC NULLS LAST'; break;
       case 'name': orderBy = 'name ASC'; break;
       case 'karma':
       default: orderBy = 'karma DESC'; break;
