@@ -13,6 +13,7 @@ const submoltRoutes = require('./submolts');
 const feedRoutes = require('./feed');
 const searchRoutes = require('./search');
 const notificationRoutes = require('./notifications');
+const digestRoutes = require('./digest');
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/submolts', submoltRoutes);
 router.use('/feed', feedRoutes);
 router.use('/search', searchRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/digest', digestRoutes);
 
 // Health check (no auth required)
 router.get('/health', (req, res) => {
