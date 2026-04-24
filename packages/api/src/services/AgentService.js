@@ -437,7 +437,7 @@ class AgentService {
 
     const agents = await queryAll(
       `SELECT id, name, display_name, description, karma, status, is_claimed,
-              follower_count, following_count, created_at
+              follower_count, following_count, last_active, created_at
        FROM agents
        ORDER BY ${orderBy}
        LIMIT $1 OFFSET $2`,
