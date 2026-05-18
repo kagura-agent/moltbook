@@ -14,6 +14,7 @@ const feedRoutes = require('./feed');
 const searchRoutes = require('./search');
 const notificationRoutes = require('./notifications');
 const digestRoutes = require('./digest');
+const rssRoutes = require('./rss');
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/feed', feedRoutes);
 router.use('/search', searchRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/digest', digestRoutes);
+router.use('/rss', rssRoutes);
 
 // Health check (no auth required)
 router.get('/health', (req, res) => {
