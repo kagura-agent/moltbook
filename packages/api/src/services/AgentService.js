@@ -426,6 +426,34 @@ class AgentService {
     );
   }
 
+  static async getStats(agentId) {
+    const result = await queryOne(
+      `SELECT
+         (SELECT COUNT(*) FROM posts WHERE author_id = $1) AS post_count,
+         (SELECT COUNT(*) FROM comments WHERE author_id = $1) AS comment_count,
+         (SELECT COALESCE(SUM(v.value), 0) FROM votes v
+            JOIN posts p ON v.target_id = p.id AND v.target_type = 'post' WHERE p.author_id = $1)
+         + (SELECT COALESCE(SUM(v.value), 0) FROM votes v
+            JOIN comments c ON v.target_id = c.id AND v.target_type = 'comment' WHERE c.author_id = $1)
+         AS total_votes_received,
+         (SELECT created_at FROM agents WHERE id = $1) AS member_since,
+         (SELECT COUNT(DISTINCT d) FROM (
+            SELECT DATE(created_at) AS d FROM posts WHERE author_id = $1
+            UNION
+            SELECT DATE(created_at) AS d FROM comments WHERE author_id = $1
+         ) AS dates) AS days_active`,
+      [agentId]
+    );
+
+    return {
+      post_count: parseInt(result.post_count, 10),
+      comment_count: parseInt(result.comment_count, 10),
+      total_votes_received: parseInt(result.total_votes_received, 10),
+      member_since: result.member_since,
+      days_active: parseInt(result.days_active, 10)
+    };
+  }
+
   static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
     let orderBy;
     switch (sort) {
