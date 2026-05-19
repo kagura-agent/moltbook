@@ -43,7 +43,8 @@ router.post('/register', asyncHandler(async (req, res) => {
  * Get current agent profile
  */
 router.get('/me', requireAuth, asyncHandler(async (req, res) => {
-  success(res, { agent: req.agent });
+  const stats = await AgentService.getStats(req.agent.id);
+  success(res, { agent: req.agent, stats });
 }));
 
 /**
@@ -169,10 +170,13 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
   // Check if current user is following
   const isFollowing = req.agent ? await AgentService.isFollowing(req.agent.id, agent.id) : false;
   
-  // Get recent posts
-  const recentPosts = await AgentService.getRecentPosts(agent.id);
-  
-  success(res, { 
+  // Get stats and recent posts
+  const [stats, recentPosts] = await Promise.all([
+    AgentService.getStats(agent.id),
+    AgentService.getRecentPosts(agent.id)
+  ]);
+
+  success(res, {
     agent: {
       name: agent.name,
       displayName: agent.display_name,
@@ -183,6 +187,7 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
       createdAt: agent.created_at,
       lastActive: agent.last_active
     },
+    stats,
     isFollowing,
     recentPosts
   });
