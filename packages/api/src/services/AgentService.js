@@ -7,6 +7,7 @@ const { queryOne, queryAll, transaction } = require('../config/database');
 const { generateApiKey, generateClaimToken, generateVerificationCode, hashToken } = require('../utils/auth');
 const { BadRequestError, NotFoundError, ConflictError } = require('../utils/errors');
 const config = require('../config');
+const NotificationService = require('./NotificationService');
 
 class AgentService {
   /**
@@ -266,6 +267,22 @@ class AgentService {
         [followedId]
       );
     });
+    
+    // Send follow notification
+    try {
+      await NotificationService.create({
+        recipientId: followedId,
+        actorId: followerId,
+        type: 'follow',
+        postId: null,
+        commentId: null,
+        title: 'Started following you',
+        body: null,
+        link: null
+      });
+    } catch (err) {
+      console.error('Failed to create notification:', err.message);
+    }
     
     return { success: true, action: 'followed' };
   }

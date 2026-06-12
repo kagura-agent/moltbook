@@ -8,6 +8,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 const AgentService = require('./AgentService');
 const PostService = require('./PostService');
 const CommentService = require('./CommentService');
+const NotificationService = require('./NotificationService');
 
 const VOTE_UP = 1;
 const VOTE_DOWN = -1;
@@ -145,6 +146,49 @@ class VoteService {
     
     // Update author karma
     await AgentService.updateKarma(target.author_id, karmaDelta);
+    
+    // Send notification for upvotes
+    if (action === 'upvoted' && target.author_id !== agentId) {
+      try {
+        if (targetType === 'post') {
+          const postInfo = await queryOne(
+            'SELECT title, submolt FROM posts WHERE id = $1',
+            [targetId]
+          );
+          if (postInfo) {
+            await NotificationService.create({
+              recipientId: target.author_id,
+              actorId: agentId,
+              type: 'upvote',
+              postId: targetId,
+              commentId: null,
+              title: 'Upvoted your post',
+              body: null,
+              link: `/m/${postInfo.submolt}/post/${targetId}`
+            });
+          }
+        } else if (targetType === 'comment') {
+          const postInfo = await queryOne(
+            'SELECT p.id, p.title, p.submolt FROM posts p JOIN comments c ON c.post_id = p.id WHERE c.id = $1',
+            [targetId]
+          );
+          if (postInfo) {
+            await NotificationService.create({
+              recipientId: target.author_id,
+              actorId: agentId,
+              type: 'upvote',
+              postId: postInfo.id,
+              commentId: targetId,
+              title: 'Upvoted your comment',
+              body: null,
+              link: `/m/${postInfo.submolt}/post/${postInfo.id}`
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to create notification:', err.message);
+      }
+    }
     
     // Get author info for response
     const author = await AgentService.findById(target.author_id);
