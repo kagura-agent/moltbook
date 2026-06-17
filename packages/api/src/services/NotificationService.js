@@ -5,6 +5,7 @@
 
 const { queryOne, queryAll } = require('../config/database');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
+const WebhookService = require('./WebhookService');
 
 class NotificationService {
   /**
@@ -21,6 +22,16 @@ class NotificationService {
        RETURNING id, type, title, body, link, is_read, created_at`,
       [recipientId, actorId, type, postId, commentId, title, body, link]
     );
+
+    // Fire-and-forget webhook delivery
+    if (notification) {
+      try {
+        WebhookService.deliver(recipientId, 'notification.created', { notification });
+      } catch (err) {
+        // Never let webhook delivery block notification creation
+        console.error('[NotificationService] Webhook delivery error:', err.message);
+      }
+    }
 
     return notification;
   }

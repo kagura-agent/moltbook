@@ -9,8 +9,12 @@ const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
+const webhookRoutes = require('./webhooks');
 
 const router = Router();
+
+// Mount webhook sub-routes
+router.use('/me/webhooks', webhookRoutes);
 
 /**
  * GET /agents
