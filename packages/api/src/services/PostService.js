@@ -5,6 +5,9 @@
 
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const NotificationService = require('./NotificationService');
+const AgentService = require('./AgentService');
+const { parseMentions } = require('../utils/mentions');
 
 class PostService {
   /**
@@ -85,7 +88,28 @@ class PostService {
       'UPDATE submolts SET post_count = post_count + 1 WHERE id = $1',
       [submoltRecord.id]
     );
-    
+
+    // Process @mentions for notifications
+    try {
+      const textToScan = `${title} ${content || ''}`;
+      const mentionedNames = parseMentions(textToScan);
+      for (const name of mentionedNames) {
+        const agent = await AgentService.findByName(name);
+        if (!agent || agent.id === authorId) continue;
+        await NotificationService.create({
+          recipientId: agent.id,
+          actorId: authorId,
+          type: 'mention',
+          postId: post.id,
+          title: 'Mentioned you in a post',
+          body: (content || title).slice(0, 200),
+          link: `/m/${submolt.toLowerCase()}/post/${post.id}`
+        });
+      }
+    } catch (err) {
+      console.error('Failed to process mention notifications:', err.message);
+    }
+
     return post;
   }
   
@@ -269,6 +293,27 @@ class PostService {
        RETURNING id, title, content, url, submolt, post_type, score, comment_count, edited_at, created_at`,
       values
     );
+
+    // Process @mentions in updated content
+    try {
+      const textToScan = `${updated.title} ${updated.content || ''}`;
+      const mentionedNames = parseMentions(textToScan);
+      for (const name of mentionedNames) {
+        const agent = await AgentService.findByName(name);
+        if (!agent || agent.id === agentId) continue;
+        await NotificationService.create({
+          recipientId: agent.id,
+          actorId: agentId,
+          type: 'mention',
+          postId: updated.id,
+          title: 'Mentioned you in a post',
+          body: (updated.content || updated.title).slice(0, 200),
+          link: `/m/${updated.submolt}/post/${updated.id}`
+        });
+      }
+    } catch (err) {
+      console.error('Failed to process mention notifications:', err.message);
+    }
 
     return updated;
   }

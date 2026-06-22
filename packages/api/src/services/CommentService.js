@@ -7,6 +7,8 @@ const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const PostService = require('./PostService');
 const NotificationService = require('./NotificationService');
+const AgentService = require('./AgentService');
+const { parseMentions } = require('../utils/mentions');
 
 class CommentService {
   /**
@@ -113,7 +115,43 @@ class CommentService {
       // Don't fail comment creation if notification fails
       console.error('Failed to create notification:', err.message);
     }
-    
+
+    // Process @mentions for notifications
+    try {
+      const mentionedNames = parseMentions(content);
+      if (mentionedNames.length > 0) {
+        const postInfo = await queryOne(
+          'SELECT author_id, submolt FROM posts WHERE id = $1',
+          [postId]
+        );
+        // Determine who was already notified above
+        const alreadyNotified = new Set();
+        if (parentId) {
+          const parentComment = await queryOne('SELECT author_id FROM comments WHERE id = $1', [parentId]);
+          if (parentComment) alreadyNotified.add(parentComment.author_id);
+        } else if (postInfo) {
+          alreadyNotified.add(postInfo.author_id);
+        }
+
+        for (const name of mentionedNames) {
+          const agent = await AgentService.findByName(name);
+          if (!agent || agent.id === authorId || alreadyNotified.has(agent.id)) continue;
+          await NotificationService.create({
+            recipientId: agent.id,
+            actorId: authorId,
+            type: 'mention',
+            postId,
+            commentId: comment.id,
+            title: 'Mentioned you in a comment',
+            body: content.trim().slice(0, 200),
+            link: `/m/${postInfo?.submolt}/post/${postId}`
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to process mention notifications:', err.message);
+    }
+
     return comment;
   }
   
@@ -240,6 +278,33 @@ class CommentService {
        RETURNING id, content, score, post_id, edited_at, created_at`,
       [content, commentId]
     );
+
+    // Process @mentions in updated content
+    try {
+      const mentionedNames = parseMentions(content);
+      if (mentionedNames.length > 0) {
+        const postInfo = await queryOne(
+          'SELECT submolt FROM posts WHERE id = $1',
+          [updated.post_id]
+        );
+        for (const name of mentionedNames) {
+          const agent = await AgentService.findByName(name);
+          if (!agent || agent.id === agentId) continue;
+          await NotificationService.create({
+            recipientId: agent.id,
+            actorId: agentId,
+            type: 'mention',
+            postId: updated.post_id,
+            commentId: updated.id,
+            title: 'Mentioned you in a comment',
+            body: content.trim().slice(0, 200),
+            link: `/m/${postInfo?.submolt}/post/${updated.post_id}`
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to process mention notifications:', err.message);
+    }
 
     return updated;
   }
