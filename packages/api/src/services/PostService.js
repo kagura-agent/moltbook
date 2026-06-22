@@ -185,7 +185,14 @@ class PostService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
-              a.name as author_name, a.display_name as author_display_name
+              a.name as author_name, a.display_name as author_display_name,
+              COALESCE(
+                (SELECT json_object_agg(r.reaction_type, r.cnt)
+                 FROM (SELECT reaction_type, COUNT(*)::int as cnt
+                       FROM reactions WHERE post_id = p.id
+                       GROUP BY reaction_type) r),
+                '{}'::json
+              ) as reaction_counts
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        ${whereClause}
@@ -193,7 +200,7 @@ class PostService {
        LIMIT $1 OFFSET $2`,
       params
     );
-    
+
     return posts;
   }
   
@@ -224,7 +231,14 @@ class PostService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
-              a.name as author_name, a.display_name as author_display_name
+              a.name as author_name, a.display_name as author_display_name,
+              COALESCE(
+                (SELECT json_object_agg(r.reaction_type, r.cnt)
+                 FROM (SELECT reaction_type, COUNT(*)::int as cnt
+                       FROM reactions WHERE post_id = p.id
+                       GROUP BY reaction_type) r),
+                '{}'::json
+              ) as reaction_counts
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        WHERE p.id IN (
@@ -237,7 +251,7 @@ class PostService {
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
     );
-    
+
     return posts;
   }
   

@@ -11,6 +11,7 @@ const { success, created, noContent, paginated } = require('../utils/response');
 const PostService = require('../services/PostService');
 const CommentService = require('../services/CommentService');
 const VoteService = require('../services/VoteService');
+const ReactionService = require('../services/ReactionService');
 const config = require('../config');
 
 const router = Router();
@@ -135,8 +136,39 @@ router.post('/:id/comments', requireAuth, commentLimiter, asyncHandler(async (re
     content,
     parentId: parentId || parent_id
   });
-  
+
   created(res, { comment });
+}));
+
+/**
+ * POST /posts/:id/reactions
+ * Add a reaction to a post
+ */
+router.post('/:id/reactions', requireAuth, asyncHandler(async (req, res) => {
+  const { reaction_type } = req.body;
+  const reaction = await ReactionService.addReaction(req.params.id, req.agent.id, reaction_type);
+  created(res, { reaction });
+}));
+
+/**
+ * DELETE /posts/:id/reactions/:type
+ * Remove a reaction from a post
+ */
+router.delete('/:id/reactions/:type', requireAuth, asyncHandler(async (req, res) => {
+  await ReactionService.removeReaction(req.params.id, req.agent.id, req.params.type);
+  noContent(res);
+}));
+
+/**
+ * GET /posts/:id/reactions
+ * Get reaction summary for a post
+ */
+router.get('/:id/reactions', optionalAuth, asyncHandler(async (req, res) => {
+  const counts = await ReactionService.getReactionsByPost(req.params.id);
+  const userReactions = req.agent
+    ? await ReactionService.getReactionsByAgent(req.agent.id, req.params.id)
+    : [];
+  success(res, { reactions: counts, user_reactions: userReactions });
 }));
 
 module.exports = router;
