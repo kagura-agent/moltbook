@@ -144,6 +144,136 @@ class ReactionService {
   static getAllowedReactions() {
     return [...ALLOWED_REACTIONS];
   }
+
+  // ── Comment Reactions ──────────────────────────────────────────
+
+  /**
+   * Add a reaction to a comment
+   *
+   * @param {string} commentId - Comment ID
+   * @param {string} agentId - Agent ID
+   * @param {string} reactionType - Reaction type
+   * @returns {Promise<Object>} Created reaction
+   */
+  static async addCommentReaction(commentId, agentId, reactionType) {
+    if (!ALLOWED_REACTIONS.includes(reactionType)) {
+      throw new BadRequestError(
+        `Invalid reaction type "${reactionType}"`,
+        'INVALID_REACTION',
+        `Allowed reactions: ${ALLOWED_REACTIONS.join(', ')}`
+      );
+    }
+
+    // Verify comment exists
+    const comment = await queryOne('SELECT id FROM comments WHERE id = $1', [commentId]);
+    if (!comment) {
+      throw new NotFoundError('Comment');
+    }
+
+    // Insert reaction (unique constraint handles duplicates)
+    try {
+      const reaction = await queryOne(
+        `INSERT INTO comment_reactions (comment_id, agent_id, reaction_type)
+         VALUES ($1, $2, $3)
+         RETURNING id, comment_id, agent_id, reaction_type, created_at`,
+        [commentId, agentId, reactionType]
+      );
+      return reaction;
+    } catch (err) {
+      if (err.code === '23505') { // unique_violation
+        throw new ConflictError('You already reacted with this emoji');
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Remove a reaction from a comment
+   *
+   * @param {string} commentId - Comment ID
+   * @param {string} agentId - Agent ID
+   * @param {string} reactionType - Reaction type
+   * @returns {Promise<boolean>} Whether reaction was removed
+   */
+  static async removeCommentReaction(commentId, agentId, reactionType) {
+    const result = await queryOne(
+      `DELETE FROM comment_reactions
+       WHERE comment_id = $1 AND agent_id = $2 AND reaction_type = $3
+       RETURNING id`,
+      [commentId, agentId, reactionType]
+    );
+
+    if (!result) {
+      throw new NotFoundError('Reaction');
+    }
+
+    return true;
+  }
+
+  /**
+   * Get reaction summary for a comment
+   * Returns counts per reaction type
+   *
+   * @param {string} commentId - Comment ID
+   * @returns {Promise<Object>} Map of reaction_type -> count
+   */
+  static async getReactionsByComment(commentId) {
+    const reactions = await queryAll(
+      `SELECT reaction_type, COUNT(*)::int as count
+       FROM comment_reactions
+       WHERE comment_id = $1
+       GROUP BY reaction_type
+       ORDER BY count DESC`,
+      [commentId]
+    );
+
+    const summary = {};
+    for (const row of reactions) {
+      summary[row.reaction_type] = parseInt(row.count, 10);
+    }
+    return summary;
+  }
+
+  /**
+   * Get an agent's reactions on a comment
+   *
+   * @param {string} agentId - Agent ID
+   * @param {string} commentId - Comment ID
+   * @returns {Promise<string[]>} List of reaction types the agent used
+   */
+  static async getReactionsByAgentOnComment(agentId, commentId) {
+    const reactions = await queryAll(
+      `SELECT reaction_type FROM comment_reactions
+       WHERE agent_id = $1 AND comment_id = $2`,
+      [agentId, commentId]
+    );
+    return reactions.map(r => r.reaction_type);
+  }
+
+  /**
+   * Get reaction counts for multiple comments (for feed embedding)
+   *
+   * @param {string[]} commentIds - Array of comment IDs
+   * @returns {Promise<Object>} Map of commentId -> { reaction_type: count }
+   */
+  static async getReactionsForComments(commentIds) {
+    if (!commentIds.length) return {};
+
+    const reactions = await queryAll(
+      `SELECT comment_id, reaction_type, COUNT(*)::int as count
+       FROM comment_reactions
+       WHERE comment_id = ANY($1)
+       GROUP BY comment_id, reaction_type`,
+      [commentIds]
+    );
+
+    const result = {};
+    for (const row of reactions) {
+      if (!result[row.comment_id]) result[row.comment_id] = {};
+      result[row.comment_id][row.reaction_type] = parseInt(row.count, 10);
+    }
+    return result;
+  }
 }
 
 module.exports = ReactionService;
