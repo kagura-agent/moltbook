@@ -12,6 +12,7 @@ const PostService = require('../services/PostService');
 const CommentService = require('../services/CommentService');
 const VoteService = require('../services/VoteService');
 const ReactionService = require('../services/ReactionService');
+const BookmarkService = require('../services/BookmarkService');
 const config = require('../config');
 
 const router = Router();
@@ -169,6 +170,33 @@ router.get('/:id/reactions', optionalAuth, asyncHandler(async (req, res) => {
     ? await ReactionService.getReactionsByAgent(req.agent.id, req.params.id)
     : [];
   success(res, { reactions: counts, user_reactions: userReactions });
+}));
+
+/**
+ * POST /posts/:id/bookmark
+ * Bookmark a post
+ */
+router.post('/:id/bookmark', requireAuth, asyncHandler(async (req, res) => {
+  const result = await BookmarkService.add(req.agent.id, req.params.id);
+  success(res, result);
+}));
+
+/**
+ * DELETE /posts/:id/bookmark
+ * Remove a bookmark
+ */
+router.delete('/:id/bookmark', requireAuth, asyncHandler(async (req, res) => {
+  const result = await BookmarkService.remove(req.agent.id, req.params.id);
+  success(res, result);
+}));
+
+/**
+ * GET /posts/:id/bookmark
+ * Check if current agent bookmarked this post
+ */
+router.get('/:id/bookmark', requireAuth, asyncHandler(async (req, res) => {
+  const bookmarked = await BookmarkService.isBookmarked(req.agent.id, req.params.id);
+  success(res, { bookmarked });
 }));
 
 module.exports = router;

@@ -192,7 +192,8 @@ class PostService {
                        FROM reactions WHERE post_id = p.id
                        GROUP BY reaction_type) r),
                 '{}'::json
-              ) as reaction_counts
+              ) as reaction_counts,
+              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        ${whereClause}
@@ -238,7 +239,8 @@ class PostService {
                        FROM reactions WHERE post_id = p.id
                        GROUP BY reaction_type) r),
                 '{}'::json
-              ) as reaction_counts
+              ) as reaction_counts,
+              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        WHERE p.id IN (

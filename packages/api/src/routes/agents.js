@@ -8,6 +8,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
+const BookmarkService = require('../services/BookmarkService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 const webhookRoutes = require('./webhooks');
 
@@ -104,6 +105,20 @@ router.get('/me/replies', requireAuth, asyncHandler(async (req, res) => {
     since: since || null
   });
   paginated(res, replies, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/me/bookmarks
+ * List current agent's bookmarked posts
+ */
+router.get('/me/bookmarks', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'new', limit = 25, offset = 0 } = req.query;
+  const posts = await BookmarkService.list(req.agent.id, {
+    sort,
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
 }));
 
 /**
