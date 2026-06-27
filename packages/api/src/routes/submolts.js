@@ -6,9 +6,10 @@
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { success, created, paginated } = require('../utils/response');
+const { success, created, paginated, noContent } = require('../utils/response');
 const SubmoltService = require('../services/SubmoltService');
 const PostService = require('../services/PostService');
+const FlairService = require('../services/FlairService');
 
 const router = Router();
 
@@ -154,6 +155,97 @@ router.delete('/:name/moderators', requireAuth, asyncHandler(async (req, res) =>
   
   const result = await SubmoltService.removeModerator(submolt.id, req.agent.id, agent_name);
   success(res, result);
+}));
+
+// ── Flair Routes ─────────────────────────────────────────────────────────────
+
+/**
+ * GET /submolts/:name/flairs
+ * List flairs for a submolt (public)
+ */
+router.get('/:name/flairs', optionalAuth, asyncHandler(async (req, res) => {
+  const submolt = await SubmoltService.findByName(req.params.name);
+  const flairs = await FlairService.list(submolt.id);
+  success(res, { flairs });
+}));
+
+/**
+ * POST /submolts/:name/flairs
+ * Create a flair (auth required, creator/moderator only)
+ */
+router.post('/:name/flairs', requireAuth, asyncHandler(async (req, res) => {
+  const submolt = await SubmoltService.findByName(req.params.name);
+  
+  // Check permissions: must be owner or moderator
+  const mod = await require('../config/database').queryOne(
+    'SELECT role FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
+    [submolt.id, req.agent.id]
+  );
+  if (!mod || (mod.role !== 'owner' && mod.role !== 'moderator')) {
+    const { ForbiddenError } = require('../utils/errors');
+    throw new ForbiddenError('Only submolt creators and moderators can manage flairs');
+  }
+  
+  const { name, color, displayOrder, display_order } = req.body;
+  const flair = await FlairService.create(submolt.id, {
+    name,
+    color,
+    displayOrder: displayOrder !== undefined ? displayOrder : display_order
+  });
+  created(res, { flair });
+}));
+
+/**
+ * PATCH /submolts/:name/flairs/:flairId
+ * Update a flair (auth required, creator/moderator only)
+ */
+router.patch('/:name/flairs/:flairId', requireAuth, asyncHandler(async (req, res) => {
+  const submolt = await SubmoltService.findByName(req.params.name);
+  
+  // Check permissions
+  const mod = await require('../config/database').queryOne(
+    'SELECT role FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
+    [submolt.id, req.agent.id]
+  );
+  if (!mod || (mod.role !== 'owner' && mod.role !== 'moderator')) {
+    const { ForbiddenError } = require('../utils/errors');
+    throw new ForbiddenError('Only submolt creators and moderators can manage flairs');
+  }
+  
+  // Verify flair belongs to this submolt
+  await FlairService.validateForSubmolt(req.params.flairId, submolt.id);
+  
+  const { name, color, displayOrder, display_order } = req.body;
+  const flair = await FlairService.update(req.params.flairId, {
+    name,
+    color,
+    displayOrder: displayOrder !== undefined ? displayOrder : display_order
+  });
+  success(res, { flair });
+}));
+
+/**
+ * DELETE /submolts/:name/flairs/:flairId
+ * Delete a flair (auth required, creator/moderator only)
+ */
+router.delete('/:name/flairs/:flairId', requireAuth, asyncHandler(async (req, res) => {
+  const submolt = await SubmoltService.findByName(req.params.name);
+  
+  // Check permissions
+  const mod = await require('../config/database').queryOne(
+    'SELECT role FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
+    [submolt.id, req.agent.id]
+  );
+  if (!mod || (mod.role !== 'owner' && mod.role !== 'moderator')) {
+    const { ForbiddenError } = require('../utils/errors');
+    throw new ForbiddenError('Only submolt creators and moderators can manage flairs');
+  }
+  
+  // Verify flair belongs to this submolt
+  await FlairService.validateForSubmolt(req.params.flairId, submolt.id);
+  
+  await FlairService.delete(req.params.flairId);
+  noContent(res);
 }));
 
 module.exports = router;

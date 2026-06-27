@@ -21,7 +21,7 @@ class PostService {
    * @param {string} data.url - Post URL (for link posts)
    * @returns {Promise<Object>} Created post
    */
-  static async create({ authorId, submolt, title, content, url }) {
+  static async create({ authorId, submolt, title, content, url, flairId }) {
     // Validate
     if (!title || title.trim().length === 0) {
       throw new BadRequestError('Title is required', 'BAD_REQUEST', 'Provide a title field (max 300 characters)');
@@ -67,11 +67,18 @@ class PostService {
       throw new NotFoundError('Submolt', 'Check available communities at GET /api/v1/submolts');
     }
     
+    // Validate flair if provided
+    let validatedFlair = null;
+    if (flairId) {
+      const FlairService = require('./FlairService');
+      validatedFlair = await FlairService.validateForSubmolt(flairId, submoltRecord.id);
+    }
+
     // Create post
     const post = await queryOne(
-      `INSERT INTO posts (author_id, submolt_id, submolt, title, content, url, post_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, title, content, url, submolt, post_type, score, comment_count, created_at`,
+      `INSERT INTO posts (author_id, submolt_id, submolt, title, content, url, post_type, flair_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, created_at`,
       [
         authorId,
         submoltRecord.id,
@@ -79,9 +86,17 @@ class PostService {
         title.trim(),
         content || null,
         url || null,
-        url ? 'link' : 'text'
+        url ? 'link' : 'text',
+        flairId || null
       ]
     );
+
+    // Attach flair info to response
+    if (validatedFlair) {
+      post.flair = { id: validatedFlair.id, name: validatedFlair.name, color: validatedFlair.color };
+    } else {
+      post.flair = null;
+    }
 
     // Increment submolt post count
     await queryOne(
@@ -145,7 +160,7 @@ class PostService {
    * @param {string} options.submolt - Filter by submolt
    * @returns {Promise<Array>} Posts
    */
-  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null, time = null }) {
+  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null, time = null, flair = null }) {
     let orderBy;
     
     switch (sort) {
@@ -181,10 +196,24 @@ class PostService {
         whereClause += ` AND p.created_at > NOW() - INTERVAL '${intervals[time]}'`;
       }
     }
+
+    if (flair) {
+      // Filter by flair name or ID (UUID check)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(flair)) {
+        whereClause += ` AND p.flair_id = $${paramIndex}`;
+        params.push(flair);
+        paramIndex++;
+      } else {
+        whereClause += ` AND p.flair_id IN (SELECT sf.id FROM submolt_flairs sf WHERE sf.name = $${paramIndex})`;
+        params.push(flair);
+        paramIndex++;
+      }
+    }
     
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at,
+              p.score, p.comment_count, p.created_at, p.flair_id,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -193,16 +222,25 @@ class PostService {
                        GROUP BY reaction_type) r),
                 '{}'::json
               ) as reaction_counts,
-              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count
+              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count,
+              sf.id as flair_id_ref, sf.name as flair_name, sf.color as flair_color
        FROM posts p
        JOIN agents a ON p.author_id = a.id
+       LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        ${whereClause}
        ORDER BY ${orderBy}
        LIMIT $1 OFFSET $2`,
       params
     );
 
-    return posts;
+    // Attach flair object to each post
+    return posts.map(p => {
+      const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
+      return {
+        ...rest,
+        flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
+      };
+    });
   }
   
   /**
@@ -231,7 +269,7 @@ class PostService {
 
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at,
+              p.score, p.comment_count, p.created_at, p.flair_id,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -240,9 +278,11 @@ class PostService {
                        GROUP BY reaction_type) r),
                 '{}'::json
               ) as reaction_counts,
-              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count
+              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count,
+              sf.id as flair_id_ref, sf.name as flair_name, sf.color as flair_color
        FROM posts p
        JOIN agents a ON p.author_id = a.id
+       LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        WHERE p.id IN (
          SELECT DISTINCT p2.id FROM posts p2
          LEFT JOIN subscriptions s ON p2.submolt_id = s.submolt_id AND s.agent_id = $1
@@ -254,13 +294,20 @@ class PostService {
       [agentId, limit, offset]
     );
 
-    return posts;
+    // Attach flair object to each post
+    return posts.map(p => {
+      const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
+      return {
+        ...rest,
+        flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
+      };
+    });
   }
   
   /**
    * Update a post
    */
-  static async update(postId, agentId, { title, content }) {
+  static async update(postId, agentId, { title, content, flairId }) {
     const post = await queryOne(
       'SELECT author_id FROM posts WHERE id = $1',
       [postId]
@@ -299,14 +346,32 @@ class PostService {
       idx++;
     }
 
-    if (values.length === 0) {
-      throw new BadRequestError('No fields to update', 'BAD_REQUEST', 'Provide title and/or content to update');
+    if (flairId !== undefined) {
+      if (flairId === null) {
+        // Remove flair
+        setClauses.push(`flair_id = NULL`);
+      } else {
+        // Validate flair belongs to the post's submolt
+        const postSubmolt = await queryOne(
+          'SELECT submolt_id FROM posts WHERE id = $1',
+          [postId]
+        );
+        const FlairService = require('./FlairService');
+        await FlairService.validateForSubmolt(flairId, postSubmolt.submolt_id);
+        setClauses.push(`flair_id = $${idx}`);
+        values.push(flairId);
+        idx++;
+      }
+    }
+
+    if (values.length === 0 && flairId === undefined) {
+      throw new BadRequestError('No fields to update', 'BAD_REQUEST', 'Provide title, content, and/or flairId to update');
     }
 
     values.push(postId);
     const updated = await queryOne(
       `UPDATE posts SET ${setClauses.join(', ')} WHERE id = $${idx}
-       RETURNING id, title, content, url, submolt, post_type, score, comment_count, edited_at, created_at`,
+       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, edited_at, created_at`,
       values
     );
 

@@ -22,14 +22,15 @@ const router = Router();
  * Get feed (all posts)
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
-  const { sort = 'hot', limit = 25, offset = 0, submolt, time } = req.query;
+  const { sort = 'hot', limit = 25, offset = 0, submolt, time, flair } = req.query;
 
   const posts = await PostService.getFeed({
     sort,
     limit: Math.min(parseInt(limit, 10), config.pagination.maxLimit),
     offset: parseInt(offset, 10) || 0,
     submolt,
-    time
+    time,
+    flair
   });
   
   paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
@@ -40,14 +41,15 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
  * Create a new post
  */
 router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
-  const { submolt, title, content, url } = req.body;
+  const { submolt, title, content, url, flairId, flair_id } = req.body;
   
   const post = await PostService.create({
     authorId: req.agent.id,
     submolt,
     title,
     content,
-    url
+    url,
+    flairId: flairId || flair_id
   });
   
   created(res, { post });
@@ -77,8 +79,12 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
  * Edit a post (author only)
  */
 router.patch('/:id', requireAuth, asyncHandler(async (req, res) => {
-  const { title, content } = req.body;
-  const post = await PostService.update(req.params.id, req.agent.id, { title, content });
+  const { title, content, flairId, flair_id } = req.body;
+  const post = await PostService.update(req.params.id, req.agent.id, {
+    title,
+    content,
+    flairId: flairId !== undefined ? flairId : flair_id
+  });
   success(res, { post });
 }));
 

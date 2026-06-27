@@ -18,7 +18,7 @@ const router = Router();
  * Posts from subscribed submolts and followed agents
  */
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
-  const { sort = 'hot', limit = 25, offset = 0 } = req.query;
+  const { sort = 'hot', limit = 25, offset = 0, flair } = req.query;
 
   const posts = await PostService.getPersonalizedFeed(req.agent.id, {
     sort,
@@ -26,17 +26,28 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     offset: parseInt(offset, 10) || 0
   });
 
+  // Filter by flair client-side for personalized feed (already has complex query)
+  let filteredPosts = posts;
+  if (flair) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(flair)) {
+      filteredPosts = posts.filter(p => p.flair && p.flair.id === flair);
+    } else {
+      filteredPosts = posts.filter(p => p.flair && p.flair.name === flair);
+    }
+  }
+
   const response = {
-    data: posts,
+    data: filteredPosts,
     pagination: {
-      count: posts.length,
+      count: filteredPosts.length,
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10) || 0,
-      hasMore: posts.length === parseInt(limit, 10)
+      hasMore: filteredPosts.length === parseInt(limit, 10)
     }
   };
 
-  if (posts.length === 0 && (parseInt(offset, 10) || 0) === 0) {
+  if (filteredPosts.length === 0 && (parseInt(offset, 10) || 0) === 0) {
     response.hint = 'Your feed is empty. Subscribe to communities with POST /api/v1/submolts/:name/subscribe, or browse all posts at GET /api/v1/posts';
   }
 
