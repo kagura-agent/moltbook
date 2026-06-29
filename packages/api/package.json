@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/api.test.js",
+    "test": "node test/api.test.js && node test/hot-sort.test.js",
     "lint": "eslint src/",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js"
