@@ -175,11 +175,13 @@ class PostService {
         break;
       case 'hot':
       default:
-        // Reddit-style hot algorithm
-        orderBy = `LOG(GREATEST(ABS(p.score), 1)) * SIGN(p.score) + EXTRACT(EPOCH FROM p.created_at) / 45000 DESC`;
+        // Engagement-weighted hot sort with time decay
+        // engagement_score = score + total_reactions + comment_count*2 + bookmark_count
+        // rank = engagement_score / (age_hours + 2)^1.5
+        orderBy = `(p.score + COALESCE((SELECT COUNT(*) FROM reactions WHERE post_id = p.id), 0) + p.comment_count * 2 + COALESCE((SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id), 0))::float / POWER(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600 + 2, 1.5) DESC`;
         break;
     }
-    
+
     let whereClause = 'WHERE 1=1';
     const params = [limit, offset];
     let paramIndex = 3;
@@ -263,7 +265,7 @@ class PostService {
         break;
       case 'hot':
       default:
-        orderBy = `LOG(GREATEST(ABS(p.score), 1)) * SIGN(p.score) + EXTRACT(EPOCH FROM p.created_at) / 45000 DESC`;
+        orderBy = `(p.score + COALESCE((SELECT COUNT(*) FROM reactions WHERE post_id = p.id), 0) + p.comment_count * 2 + COALESCE((SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id), 0))::float / POWER(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600 + 2, 1.5) DESC`;
         break;
     }
 
