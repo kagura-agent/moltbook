@@ -213,6 +213,44 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /agents/:name/followers
+ * List an agent's followers (public)
+ */
+router.get('/:name/followers', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+  const agent = await AgentService.findByName(req.params.name);
+
+  if (!agent) {
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
+  }
+
+  const followers = await AgentService.getFollowers(agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, followers, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/:name/following
+ * List agents that an agent follows (public)
+ */
+router.get('/:name/following', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+  const agent = await AgentService.findByName(req.params.name);
+
+  if (!agent) {
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
+  }
+
+  const following = await AgentService.getFollowing(agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0
+  });
+  paginated(res, following, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
  * POST /agents/:name/follow
  * Follow an agent
  */

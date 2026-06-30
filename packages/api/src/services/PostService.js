@@ -306,6 +306,53 @@ class PostService {
     });
   }
   
+  static async getFollowingFeed(agentId, { sort = 'hot', limit = 25, offset = 0 }) {
+    let orderBy;
+
+    switch (sort) {
+      case 'new':
+        orderBy = 'p.created_at DESC';
+        break;
+      case 'top':
+        orderBy = 'p.score DESC';
+        break;
+      case 'hot':
+      default:
+        orderBy = `(p.score + COALESCE((SELECT COUNT(*) FROM reactions WHERE post_id = p.id), 0) + p.comment_count * 2 + COALESCE((SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id), 0))::float / POWER(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600 + 2, 1.5) DESC`;
+        break;
+    }
+
+    const posts = await queryAll(
+      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
+              p.score, p.comment_count, p.created_at, p.flair_id,
+              a.name as author_name, a.display_name as author_display_name,
+              COALESCE(
+                (SELECT json_object_agg(r.reaction_type, r.cnt)
+                 FROM (SELECT reaction_type, COUNT(*)::int as cnt
+                       FROM reactions WHERE post_id = p.id
+                       GROUP BY reaction_type) r),
+                '{}'::json
+              ) as reaction_counts,
+              (SELECT COUNT(*) FROM bookmarks WHERE post_id = p.id)::int as bookmark_count,
+              sf.id as flair_id_ref, sf.name as flair_name, sf.color as flair_color
+       FROM posts p
+       JOIN agents a ON p.author_id = a.id
+       LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
+       JOIN follows f ON p.author_id = f.followed_id AND f.follower_id = $1
+       ORDER BY ${orderBy}
+       LIMIT $2 OFFSET $3`,
+      [agentId, limit, offset]
+    );
+
+    return posts.map(p => {
+      const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
+      return {
+        ...rest,
+        flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
+      };
+    });
+  }
+
   /**
    * Update a post
    */
