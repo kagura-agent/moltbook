@@ -43,6 +43,23 @@ require.cache[require.resolve('../src/config/database')] = {
   }
 };
 
+// Mock NotificationService before requiring AgentService
+let notificationCalls = [];
+let mockNotificationError = null;
+
+require.cache[require.resolve('../src/services/NotificationService')] = {
+  id: require.resolve('../src/services/NotificationService'),
+  filename: require.resolve('../src/services/NotificationService'),
+  loaded: true,
+  exports: {
+    create: async (data) => {
+      notificationCalls.push(data);
+      if (mockNotificationError) throw mockNotificationError;
+      return { id: 'notif-1' };
+    }
+  }
+};
+
 const AgentService = require('../src/services/AgentService');
 
 // Test framework
@@ -53,6 +70,8 @@ function reset() {
   calls.length = 0;
   mockQueryOneResults = [];
   mockQueryAllResults = [];
+  notificationCalls = [];
+  mockNotificationError = null;
 }
 
 async function test(name, fn) {
@@ -114,6 +133,34 @@ function assertEqual(actual, expected, msg) {
     const result = await AgentService.follow('agent-1', 'agent-2');
     assertEqual(result.action, 'already_following');
     assert(!calls.some(c => c.fn === 'transaction'), 'should not use transaction');
+  });
+
+  await test('follow: creates notification for followed agent', async () => {
+    mockQueryOneResults = [null]; // not already following
+
+    await AgentService.follow('agent-1', 'agent-2');
+    assertEqual(notificationCalls.length, 1, 'should create one notification');
+    assertEqual(notificationCalls[0].recipientId, 'agent-2', 'recipientId should be followed agent');
+    assertEqual(notificationCalls[0].actorId, 'agent-1', 'actorId should be follower');
+    assertEqual(notificationCalls[0].type, 'follow', 'type should be follow');
+    assertEqual(notificationCalls[0].title, 'Started following you', 'title should match');
+  });
+
+  await test('follow: does not create notification on already_following', async () => {
+    mockQueryOneResults = [{ id: 'follow-1' }]; // already following
+
+    await AgentService.follow('agent-1', 'agent-2');
+    assertEqual(notificationCalls.length, 0, 'should not create notification');
+  });
+
+  await test('follow: handles notification error gracefully', async () => {
+    mockQueryOneResults = [null]; // not already following
+    mockNotificationError = new Error('Notification service down');
+
+    const result = await AgentService.follow('agent-1', 'agent-2');
+    assertEqual(result.success, true, 'follow should still succeed');
+    assertEqual(result.action, 'followed', 'action should be followed');
+    assertEqual(notificationCalls.length, 1, 'should have attempted notification');
   });
 
   // --- unfollow ---
