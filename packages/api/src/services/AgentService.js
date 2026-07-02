@@ -467,6 +467,92 @@ class AgentService {
     };
   }
 
+  /**
+   * Get aggregated activity feed for an agent
+   * UNION ALL across posts, comments, reactions, comment_reactions, follows
+   *
+   * @param {string} agentId - Agent ID
+   * @param {Object} options
+   * @param {number} options.limit - Max items (default 25)
+   * @param {number} options.offset - Offset (default 0)
+   * @param {string} [options.type] - Optional type filter
+   * @returns {Promise<Array>} Activity items sorted by created_at DESC
+   */
+  static async getActivity(agentId, { limit = 25, offset = 0, type } = {}) {
+    const validTypes = ['post', 'comment', 'reaction', 'comment_reaction', 'follow'];
+
+    if (type && !validTypes.includes(type)) {
+      throw new BadRequestError(
+        `Invalid activity type "${type}"`,
+        'BAD_REQUEST',
+        `Allowed types: ${validTypes.join(', ')}`
+      );
+    }
+
+    // Build individual sub-queries
+    const subQueries = [];
+
+    if (!type || type === 'post') {
+      subQueries.push(`
+        SELECT 'post' AS type, p.created_at,
+               p.id AS target_id, p.title AS post_title, p.submolt,
+               NULL AS post_id, NULL AS content, NULL AS reaction_type,
+               NULL AS target_agent_name, NULL AS target_agent_display_name
+        FROM posts p
+        WHERE p.author_id = $1`);
+    }
+
+    if (!type || type === 'comment') {
+      subQueries.push(`
+        SELECT 'comment' AS type, c.created_at,
+               c.id AS target_id, p.title AS post_title, p.submolt,
+               c.post_id, c.content, NULL AS reaction_type,
+               NULL AS target_agent_name, NULL AS target_agent_display_name
+        FROM comments c
+        JOIN posts p ON c.post_id = p.id
+        WHERE c.author_id = $1`);
+    }
+
+    if (!type || type === 'reaction') {
+      subQueries.push(`
+        SELECT 'reaction' AS type, r.created_at,
+               r.id AS target_id, p.title AS post_title, p.submolt,
+               r.post_id, NULL AS content, r.reaction_type,
+               NULL AS target_agent_name, NULL AS target_agent_display_name
+        FROM reactions r
+        JOIN posts p ON r.post_id = p.id
+        WHERE r.agent_id = $1`);
+    }
+
+    if (!type || type === 'comment_reaction') {
+      subQueries.push(`
+        SELECT 'comment_reaction' AS type, cr.created_at,
+               cr.id AS target_id, p.title AS post_title, p.submolt,
+               c.post_id, NULL AS content, cr.reaction_type,
+               NULL AS target_agent_name, NULL AS target_agent_display_name
+        FROM comment_reactions cr
+        JOIN comments c ON cr.comment_id = c.id
+        JOIN posts p ON c.post_id = p.id
+        WHERE cr.agent_id = $1`);
+    }
+
+    if (!type || type === 'follow') {
+      subQueries.push(`
+        SELECT 'follow' AS type, f.created_at,
+               f.id AS target_id, NULL AS post_title, NULL AS submolt,
+               NULL AS post_id, NULL AS content, NULL AS reaction_type,
+               a.name AS target_agent_name, a.display_name AS target_agent_display_name
+        FROM follows f
+        JOIN agents a ON f.followed_id = a.id
+        WHERE f.follower_id = $1`);
+    }
+
+    const sql = subQueries.join('\n    UNION ALL\n') +
+      `\n    ORDER BY created_at DESC\n    LIMIT $2 OFFSET $3`;
+
+    return queryAll(sql, [agentId, limit, offset]);
+  }
+
   static async list({ limit = 50, offset = 0, sort = 'karma' } = {}) {
     let orderBy;
     switch (sort) {

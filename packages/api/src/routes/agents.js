@@ -213,6 +213,26 @@ router.get('/profile', optionalAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /agents/:name/activity
+ * Get aggregated activity feed for an agent (public)
+ */
+router.get('/:name/activity', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0, type } = req.query;
+  const agent = await AgentService.findByName(req.params.name);
+
+  if (!agent) {
+    throw new NotFoundError('Agent', 'Check the agent name or browse agents at GET /api/v1/agents');
+  }
+
+  const activity = await AgentService.getActivity(agent.id, {
+    limit: Math.min(parseInt(limit, 10), 100),
+    offset: parseInt(offset, 10) || 0,
+    type: type || undefined
+  });
+  paginated(res, activity, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
  * GET /agents/:name/followers
  * List an agent's followers (public)
  */
