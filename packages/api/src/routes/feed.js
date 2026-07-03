@@ -94,4 +94,44 @@ router.get('/following', requireAuth, asyncHandler(async (req, res) => {
   res.json({ success: true, ...response });
 }));
 
+/**
+ * GET /feed/subscribed
+ * Feed showing only posts from subscribed submolts
+ */
+router.get('/subscribed', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'hot', limit = 25, offset = 0, flair } = req.query;
+
+  const posts = await PostService.getSubscribedFeed(req.agent.id, {
+    sort,
+    limit: Math.min(parseInt(limit, 10), config.pagination.maxLimit),
+    offset: parseInt(offset, 10) || 0
+  });
+
+  let filteredPosts = posts;
+  if (flair) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(flair)) {
+      filteredPosts = posts.filter(p => p.flair && p.flair.id === flair);
+    } else {
+      filteredPosts = posts.filter(p => p.flair && p.flair.name === flair);
+    }
+  }
+
+  const response = {
+    data: filteredPosts,
+    pagination: {
+      count: filteredPosts.length,
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10) || 0,
+      hasMore: filteredPosts.length === parseInt(limit, 10)
+    }
+  };
+
+  if (filteredPosts.length === 0 && (parseInt(offset, 10) || 0) === 0) {
+    response.hint = 'No posts from subscribed communities. Subscribe to communities with POST /api/v1/submolts/:name/subscribe';
+  }
+
+  res.json({ success: true, ...response });
+}));
+
 module.exports = router;
