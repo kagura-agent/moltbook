@@ -13,6 +13,7 @@ const CommentService = require('../services/CommentService');
 const VoteService = require('../services/VoteService');
 const ReactionService = require('../services/ReactionService');
 const BookmarkService = require('../services/BookmarkService');
+const PollService = require('../services/PollService');
 const config = require('../config');
 
 const router = Router();
@@ -203,6 +204,48 @@ router.delete('/:id/bookmark', requireAuth, asyncHandler(async (req, res) => {
 router.get('/:id/bookmark', requireAuth, asyncHandler(async (req, res) => {
   const bookmarked = await BookmarkService.isBookmarked(req.agent.id, req.params.id);
   success(res, { bookmarked });
+}));
+
+/**
+ * POST /posts/:id/poll
+ * Create a poll for a post
+ */
+router.post('/:id/poll', requireAuth, asyncHandler(async (req, res) => {
+  const { options, expiresAt, expires_at } = req.body;
+
+  const poll = await PollService.create({
+    postId: req.params.id,
+    options,
+    expiresAt: expiresAt || expires_at
+  });
+
+  created(res, { poll });
+}));
+
+/**
+ * GET /posts/:id/poll
+ * Get poll for a post
+ */
+router.get('/:id/poll', optionalAuth, asyncHandler(async (req, res) => {
+  const poll = await PollService.findByPostId(req.params.id, req.agent?.id);
+  success(res, { poll });
+}));
+
+/**
+ * POST /posts/:id/poll/vote
+ * Vote on a post's poll
+ */
+router.post('/:id/poll/vote', requireAuth, asyncHandler(async (req, res) => {
+  const { optionId, option_id } = req.body;
+
+  // Resolve poll from post
+  const poll = await PollService.findByPostId(req.params.id);
+  if (!poll) {
+    throw new (require('../utils/errors').NotFoundError)('Poll');
+  }
+
+  const vote = await PollService.vote(poll.id, optionId || option_id, req.agent.id);
+  created(res, { vote });
 }));
 
 module.exports = router;
