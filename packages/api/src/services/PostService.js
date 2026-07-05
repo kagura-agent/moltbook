@@ -213,9 +213,12 @@ class PostService {
       }
     }
     
+    const pinnedPrefix = submolt ? 'p.is_pinned DESC NULLS LAST, p.pinned_at DESC NULLS LAST, ' : '';
+
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at, p.flair_id,
+              p.is_pinned, p.pinned_at,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -230,12 +233,11 @@ class PostService {
        JOIN agents a ON p.author_id = a.id
        LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        ${whereClause}
-       ORDER BY ${orderBy}
+       ORDER BY ${pinnedPrefix}${orderBy}
        LIMIT $1 OFFSET $2`,
       params
     );
 
-    // Attach flair object to each post
     return posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
@@ -272,6 +274,7 @@ class PostService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at, p.flair_id,
+              p.is_pinned, p.pinned_at,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -296,7 +299,6 @@ class PostService {
       [agentId, limit, offset]
     );
 
-    // Attach flair object to each post
     return posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
@@ -325,6 +327,7 @@ class PostService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at, p.flair_id,
+              p.is_pinned, p.pinned_at,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -372,6 +375,7 @@ class PostService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at, p.flair_id,
+              p.is_pinned, p.pinned_at,
               a.name as author_name, a.display_name as author_display_name,
               COALESCE(
                 (SELECT json_object_agg(r.reaction_type, r.cnt)
@@ -548,6 +552,86 @@ class PostService {
     );
   }
   
+  static async pinPost(postId, submoltName, agentId) {
+    const submolt = await queryOne(
+      'SELECT id FROM submolts WHERE name = $1',
+      [submoltName.toLowerCase()]
+    );
+    if (!submolt) throw new NotFoundError('Submolt');
+
+    const mod = await queryOne(
+      'SELECT role FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
+      [submolt.id, agentId]
+    );
+    if (!mod || (mod.role !== 'owner' && mod.role !== 'moderator')) {
+      throw new ForbiddenError('Only submolt owners and moderators can pin posts');
+    }
+
+    const post = await queryOne(
+      'SELECT id, submolt_id, is_pinned FROM posts WHERE id = $1',
+      [postId]
+    );
+    if (!post || post.submolt_id !== submolt.id) {
+      throw new NotFoundError('Post');
+    }
+
+    if (post.is_pinned) {
+      throw new BadRequestError('Post is already pinned', 'ALREADY_PINNED');
+    }
+
+    const pinned = await queryAll(
+      'SELECT id FROM posts WHERE submolt_id = $1 AND is_pinned = true',
+      [submolt.id]
+    );
+    if (pinned.length >= 3) {
+      throw new BadRequestError('Maximum 3 pinned posts per submolt', 'PIN_LIMIT', 'Unpin an existing post first');
+    }
+
+    const updated = await queryOne(
+      `UPDATE posts SET is_pinned = true, pinned_at = NOW()
+       WHERE id = $1
+       RETURNING id, title, submolt, is_pinned, pinned_at`,
+      [postId]
+    );
+    return updated;
+  }
+
+  static async unpinPost(postId, submoltName, agentId) {
+    const submolt = await queryOne(
+      'SELECT id FROM submolts WHERE name = $1',
+      [submoltName.toLowerCase()]
+    );
+    if (!submolt) throw new NotFoundError('Submolt');
+
+    const mod = await queryOne(
+      'SELECT role FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
+      [submolt.id, agentId]
+    );
+    if (!mod || (mod.role !== 'owner' && mod.role !== 'moderator')) {
+      throw new ForbiddenError('Only submolt owners and moderators can unpin posts');
+    }
+
+    const post = await queryOne(
+      'SELECT id, submolt_id, is_pinned FROM posts WHERE id = $1',
+      [postId]
+    );
+    if (!post || post.submolt_id !== submolt.id) {
+      throw new NotFoundError('Post');
+    }
+
+    if (!post.is_pinned) {
+      throw new BadRequestError('Post is not pinned', 'NOT_PINNED');
+    }
+
+    const updated = await queryOne(
+      `UPDATE posts SET is_pinned = false, pinned_at = NULL
+       WHERE id = $1
+       RETURNING id, title, submolt, is_pinned, pinned_at`,
+      [postId]
+    );
+    return updated;
+  }
+
   /**
    * Get posts by submolt
    * 

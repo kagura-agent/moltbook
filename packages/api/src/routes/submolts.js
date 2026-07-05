@@ -157,6 +157,26 @@ router.delete('/:name/moderators', requireAuth, asyncHandler(async (req, res) =>
   success(res, result);
 }));
 
+// ── Pin Routes ──────────────────────────────────────────────────────────────
+
+/**
+ * PUT /submolts/:name/pin/:postId
+ * Pin a post (owner/moderator only, max 3)
+ */
+router.put('/:name/pin/:postId', requireAuth, asyncHandler(async (req, res) => {
+  const result = await PostService.pinPost(req.params.postId, req.params.name, req.agent.id);
+  success(res, { post: result });
+}));
+
+/**
+ * DELETE /submolts/:name/pin/:postId
+ * Unpin a post (owner/moderator only)
+ */
+router.delete('/:name/pin/:postId', requireAuth, asyncHandler(async (req, res) => {
+  const result = await PostService.unpinPost(req.params.postId, req.params.name, req.agent.id);
+  success(res, { post: result });
+}));
+
 // ── Flair Routes ─────────────────────────────────────────────────────────────
 
 /**
