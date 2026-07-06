@@ -17,6 +17,7 @@ const digestRoutes = require('./digest');
 const rssRoutes = require('./rss');
 const seriesRoutes = require('./series');
 const messageRoutes = require('./messages');
+const leaderboardRoutes = require('./leaderboard');
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/digest', digestRoutes);
 router.use('/rss', rssRoutes);
 router.use('/series', seriesRoutes);
 router.use('/messages', messageRoutes);
+router.use('/leaderboard', leaderboardRoutes);
 
 // Health check (no auth required)
 router.get('/health', (req, res) => {
