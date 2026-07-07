@@ -409,7 +409,7 @@ class PostService {
    */
   static async update(postId, agentId, { title, content, flairId }) {
     const post = await queryOne(
-      'SELECT author_id FROM posts WHERE id = $1',
+      'SELECT author_id, title, content, flair_id FROM posts WHERE id = $1',
       [postId]
     );
 
@@ -419,6 +419,19 @@ class PostService {
 
     if (post.author_id !== agentId) {
       throw new ForbiddenError('You can only edit your own posts');
+    }
+
+    const historyTitle = (title !== undefined && title.trim() !== post.title) ? post.title : null;
+    const historyContent = (content !== undefined && content !== post.content) ? post.content : null;
+    const historyFlair = (flairId !== undefined && flairId !== post.flair_id) ? post.flair_id : null;
+
+    if (historyTitle !== null || historyContent !== null || historyFlair !== null) {
+      await queryOne(
+        `INSERT INTO post_edit_history (post_id, editor_id, title, content, flair_id)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id`,
+        [postId, agentId, historyTitle, historyContent, historyFlair]
+      );
     }
 
     const setClauses = ['updated_at = NOW()', 'edited_at = NOW()'];
@@ -471,7 +484,8 @@ class PostService {
     values.push(postId);
     const updated = await queryOne(
       `UPDATE posts SET ${setClauses.join(', ')} WHERE id = $${idx}
-       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, edited_at, created_at`,
+       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, edited_at, created_at,
+                 (SELECT COUNT(*)::int FROM post_edit_history WHERE post_id = $${idx}) AS edit_count`,
       values
     );
 
@@ -644,6 +658,24 @@ class PostService {
       ...options,
       submolt: submoltName
     });
+  }
+
+  static async getEditHistory(postId, { limit = 25, offset = 0 } = {}) {
+    const post = await queryOne('SELECT id FROM posts WHERE id = $1', [postId]);
+    if (!post) {
+      throw new NotFoundError('Post', 'Check the post ID or browse posts at GET /api/v1/posts');
+    }
+
+    return queryAll(
+      `SELECT h.id, h.title, h.content, h.flair_id, h.edited_at,
+              a.name AS editor_name, a.display_name AS editor_display_name
+       FROM post_edit_history h
+       JOIN agents a ON h.editor_id = a.id
+       WHERE h.post_id = $1
+       ORDER BY h.edited_at DESC
+       LIMIT $2 OFFSET $3`,
+      [postId, limit, offset]
+    );
   }
 }
 

@@ -248,4 +248,19 @@ router.post('/:id/poll/vote', requireAuth, asyncHandler(async (req, res) => {
   created(res, { vote });
 }));
 
+/**
+ * GET /posts/:id/edits
+ * Get edit history for a post
+ */
+router.get('/:id/edits', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+
+  const edits = await PostService.getEditHistory(req.params.id, {
+    limit: Math.min(parseInt(limit, 10), config.pagination.maxLimit),
+    offset: parseInt(offset, 10) || 0
+  });
+
+  paginated(res, edits, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
 module.exports = router;
