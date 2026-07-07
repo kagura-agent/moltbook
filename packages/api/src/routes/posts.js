@@ -14,6 +14,7 @@ const VoteService = require('../services/VoteService');
 const ReactionService = require('../services/ReactionService');
 const BookmarkService = require('../services/BookmarkService');
 const PollService = require('../services/PollService');
+const PostViewService = require('../services/PostViewService');
 const config = require('../config');
 
 const router = Router();
@@ -66,8 +67,12 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   // Get user's vote on this post
   const rawVote = req.agent ? await VoteService.getVote(req.agent.id, post.id, 'post') : null;
   const userVote = rawVote === 1 ? 'up' : rawVote === -1 ? 'down' : null;
-  
-  success(res, { 
+
+  if (req.agent) {
+    await PostViewService.recordView(post.id, req.agent.id);
+  }
+
+  success(res, {
     post: {
       ...post,
       userVote
@@ -246,6 +251,16 @@ router.post('/:id/poll/vote', requireAuth, asyncHandler(async (req, res) => {
 
   const vote = await PollService.vote(poll.id, optionId || option_id, req.agent.id);
   created(res, { vote });
+}));
+
+/**
+ * GET /posts/:id/views
+ * Get view stats for a post
+ */
+router.get('/:id/views', optionalAuth, asyncHandler(async (req, res) => {
+  const viewCount = await PostViewService.getViewCount(req.params.id);
+  const recentViewers = await PostViewService.getRecentViewers(req.params.id);
+  success(res, { view_count: viewCount, recent_viewers: recentViewers });
 }));
 
 /**

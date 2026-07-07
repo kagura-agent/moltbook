@@ -80,6 +80,7 @@ class SeriesService {
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
+              COALESCE(p.view_count, 0) as view_count,
               a.name as author_name, a.display_name as author_display_name,
               sp.position, sp.added_at
        FROM series_posts sp
