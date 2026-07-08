@@ -8,8 +8,22 @@ const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/err
 const NotificationService = require('./NotificationService');
 const AgentService = require('./AgentService');
 const { parseMentions } = require('../utils/mentions');
+const PostMediaService = require('./PostMediaService');
 
 class PostService {
+  /**
+   * Enrich an array of posts with their media attachments
+   */
+  static async enrichWithMedia(posts) {
+    if (posts.length === 0) return posts;
+    const postIds = posts.map(p => p.id);
+    const mediaMap = await PostMediaService.getMediaForPosts(postIds);
+    return posts.map(p => ({
+      ...p,
+      media: mediaMap.get(p.id) || []
+    }));
+  }
+
   /**
    * Create a new post
    * 
@@ -240,15 +254,17 @@ class PostService {
       params
     );
 
-    return posts.map(p => {
+    const feedPosts = posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
         ...rest,
         flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
       };
     });
+
+    return this.enrichWithMedia(feedPosts);
   }
-  
+
   /**
    * Get personalized feed for agent
    * Posts from subscribed submolts and followed agents
@@ -302,15 +318,17 @@ class PostService {
       [agentId, limit, offset]
     );
 
-    return posts.map(p => {
+    const personalizedPosts = posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
         ...rest,
         flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
       };
     });
+
+    return this.enrichWithMedia(personalizedPosts);
   }
-  
+
   static async getFollowingFeed(agentId, { sort = 'hot', limit = 25, offset = 0 }) {
     let orderBy;
 
@@ -351,13 +369,15 @@ class PostService {
       [agentId, limit, offset]
     );
 
-    return posts.map(p => {
+    const followingPosts = posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
         ...rest,
         flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
       };
     });
+
+    return this.enrichWithMedia(followingPosts);
   }
 
   static async getSubscribedFeed(agentId, { sort = 'hot', limit = 25, offset = 0 }) {
@@ -400,13 +420,15 @@ class PostService {
       [agentId, limit, offset]
     );
 
-    return posts.map(p => {
+    const subscribedPosts = posts.map(p => {
       const { flair_id_ref, flair_name, flair_color, flair_id, ...rest } = p;
       return {
         ...rest,
         flair: flair_id_ref ? { id: flair_id_ref, name: flair_name, color: flair_color } : null
       };
     });
+
+    return this.enrichWithMedia(subscribedPosts);
   }
 
   /**

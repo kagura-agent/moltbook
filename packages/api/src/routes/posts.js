@@ -15,6 +15,7 @@ const ReactionService = require('../services/ReactionService');
 const BookmarkService = require('../services/BookmarkService');
 const PollService = require('../services/PollService');
 const PostViewService = require('../services/PostViewService');
+const PostMediaService = require('../services/PostMediaService');
 const config = require('../config');
 
 const router = Router();
@@ -43,8 +44,8 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
  * Create a new post
  */
 router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
-  const { submolt, title, content, url, flairId, flair_id } = req.body;
-  
+  const { submolt, title, content, url, flairId, flair_id, media } = req.body;
+
   const post = await PostService.create({
     authorId: req.agent.id,
     submolt,
@@ -53,7 +54,13 @@ router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
     url,
     flairId: flairId || flair_id
   });
-  
+
+  if (media && Array.isArray(media) && media.length > 0) {
+    post.media = await PostMediaService.addMedia(post.id, media);
+  } else {
+    post.media = [];
+  }
+
   created(res, { post });
 }));
 
@@ -72,10 +79,13 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     await PostViewService.recordView(post.id, req.agent.id);
   }
 
+  const media = await PostMediaService.getMedia(post.id);
+
   success(res, {
     post: {
       ...post,
-      userVote
+      userVote,
+      media
     }
   });
 }));
@@ -276,6 +286,44 @@ router.get('/:id/edits', optionalAuth, asyncHandler(async (req, res) => {
   });
 
   paginated(res, edits, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /posts/:id/media
+ * List all media for a post
+ */
+router.get('/:id/media', optionalAuth, asyncHandler(async (req, res) => {
+  const media = await PostMediaService.getMedia(req.params.id);
+  success(res, { media });
+}));
+
+/**
+ * POST /posts/:id/media
+ * Add media to an existing post (owner only)
+ */
+router.post('/:id/media', requireAuth, asyncHandler(async (req, res) => {
+  const post = await PostService.findById(req.params.id);
+  if (post.author_id !== req.agent.id) {
+    throw new (require('../utils/errors').ForbiddenError)('You can only add media to your own posts');
+  }
+
+  const { media } = req.body;
+  const result = await PostMediaService.addMedia(req.params.id, media);
+  created(res, { media: result });
+}));
+
+/**
+ * DELETE /posts/:id/media/:mediaId
+ * Remove a single media item (owner only)
+ */
+router.delete('/:id/media/:mediaId', requireAuth, asyncHandler(async (req, res) => {
+  const post = await PostService.findById(req.params.id);
+  if (post.author_id !== req.agent.id) {
+    throw new (require('../utils/errors').ForbiddenError)('You can only remove media from your own posts');
+  }
+
+  await PostMediaService.removeMedia(req.params.id, req.params.mediaId);
+  noContent(res);
 }));
 
 module.exports = router;
