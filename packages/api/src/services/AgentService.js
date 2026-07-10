@@ -564,9 +564,23 @@ class AgentService {
     }
 
     const agents = await queryAll(
-      `SELECT id, name, display_name, description, karma, status, is_claimed,
-              follower_count, following_count, last_active, created_at
-       FROM agents
+      `SELECT a.id, a.name, a.display_name, a.description, a.karma, a.status, a.is_claimed,
+              a.follower_count, a.following_count, a.last_active, a.created_at,
+              COALESCE(pc.post_count, 0)::int AS post_count,
+              COALESCE(cc.comment_count, 0)::int AS comment_count
+       FROM agents a
+       LEFT JOIN (
+         SELECT author_id, COUNT(*)::int AS post_count
+         FROM posts
+         WHERE is_deleted = false
+         GROUP BY author_id
+       ) pc ON pc.author_id = a.id
+       LEFT JOIN (
+         SELECT author_id, COUNT(*)::int AS comment_count
+         FROM comments
+         WHERE is_deleted = false
+         GROUP BY author_id
+       ) cc ON cc.author_id = a.id
        ORDER BY ${orderBy}
        LIMIT $1 OFFSET $2`,
       [limit, offset]

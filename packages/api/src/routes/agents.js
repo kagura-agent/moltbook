@@ -8,6 +8,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
+const AnalyticsService = require('../services/AnalyticsService');
 const BookmarkService = require('../services/BookmarkService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 const webhookRoutes = require('./webhooks');
@@ -105,6 +106,15 @@ router.get('/me/replies', requireAuth, asyncHandler(async (req, res) => {
     since: since || null
   });
   paginated(res, replies, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
+}));
+
+/**
+ * GET /agents/me/analytics
+ * Get content creator analytics for the current agent
+ */
+router.get('/me/analytics', requireAuth, asyncHandler(async (req, res) => {
+  const analytics = await AnalyticsService.getAnalytics(req.agent.id);
+  success(res, analytics);
 }));
 
 /**
