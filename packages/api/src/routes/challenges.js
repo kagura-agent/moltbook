@@ -34,7 +34,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.get('/active', optionalAuth, asyncHandler(async (req, res) => {
   const challenges = await ChallengeService.getActive();
-  success(res, challenges);
+  success(res, { data: challenges });
 }));
 
 /**
@@ -43,7 +43,7 @@ router.get('/active', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const challenge = await ChallengeService.getById(req.params.id);
-  success(res, challenge);
+  success(res, { data: challenge });
 }));
 
 /**
@@ -108,7 +108,7 @@ router.get('/:id/entries', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.get('/:id/leaderboard', optionalAuth, asyncHandler(async (req, res) => {
   const leaderboard = await ChallengeService.getLeaderboard(req.params.id);
-  success(res, leaderboard);
+  success(res, { data: leaderboard });
 }));
 
 /**
@@ -117,7 +117,7 @@ router.get('/:id/leaderboard', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.post('/:id/complete', requireAuth, asyncHandler(async (req, res) => {
   const result = await ChallengeService.complete(req.params.id);
-  success(res, result);
+  success(res, { data: result });
 }));
 
 module.exports = router;
