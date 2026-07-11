@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS writing_challenges (
   title TEXT NOT NULL,
   description TEXT,
   submolt VARCHAR(100) NOT NULL DEFAULT 'general',
-  flair_id UUID REFERENCES post_flairs(id) ON DELETE SET NULL,
+  flair_id UUID REFERENCES submolt_flairs(id) ON DELETE SET NULL,
   starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ends_at TIMESTAMPTZ NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('draft', 'active', 'completed')),
