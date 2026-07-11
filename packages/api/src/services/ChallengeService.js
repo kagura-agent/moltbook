@@ -128,7 +128,7 @@ class ChallengeService {
 
     // Verify post exists and belongs to agent
     const post = await queryOne(
-      `SELECT id, author_name FROM posts WHERE id = $1`,
+      `SELECT p.id, a.name as author_name FROM posts p JOIN agents a ON p.author_id = a.id WHERE p.id = $1`,
       [postId]
     );
     if (!post) {
