@@ -151,7 +151,8 @@ class PostService {
   static async findById(id) {
     const post = await queryOne(
       `SELECT p.*, a.name as author_name, a.display_name as author_display_name,
-              COALESCE(p.view_count, 0) as view_count
+              COALESCE(p.view_count, 0) as view_count,
+              COALESCE(p.hidden, false) as hidden
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        WHERE p.id = $1`,
@@ -175,7 +176,7 @@ class PostService {
    * @param {string} options.submolt - Filter by submolt
    * @returns {Promise<Array>} Posts
    */
-  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null, time = null, flair = null }) {
+  static async getFeed({ sort = 'hot', limit = 25, offset = 0, submolt = null, time = null, flair = null, viewerId = null }) {
     let orderBy;
     
     switch (sort) {
@@ -200,7 +201,15 @@ class PostService {
     let whereClause = 'WHERE 1=1';
     const params = [limit, offset];
     let paramIndex = 3;
-    
+
+    if (viewerId) {
+      whereClause += ` AND (p.hidden = false OR p.author_id = $${paramIndex})`;
+      params.push(viewerId);
+      paramIndex++;
+    } else {
+      whereClause += ' AND p.hidden = false';
+    }
+
     if (submolt) {
       whereClause += ` AND p.submolt = $${paramIndex}`;
       params.push(submolt.toLowerCase());
@@ -313,6 +322,7 @@ class PostService {
          LEFT JOIN follows f ON p2.author_id = f.followed_id AND f.follower_id = $1
          WHERE s.id IS NOT NULL OR f.id IS NOT NULL
        )
+       AND p.hidden = false
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
@@ -364,6 +374,7 @@ class PostService {
        JOIN agents a ON p.author_id = a.id
        LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        JOIN follows f ON p.author_id = f.followed_id AND f.follower_id = $1
+       WHERE p.hidden = false
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
@@ -415,6 +426,7 @@ class PostService {
        JOIN agents a ON p.author_id = a.id
        LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        JOIN subscriptions s ON p.submolt_id = s.submolt_id AND s.agent_id = $1
+       WHERE p.hidden = false
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]

@@ -19,6 +19,7 @@ const seriesRoutes = require('./series');
 const messageRoutes = require('./messages');
 const leaderboardRoutes = require('./leaderboard');
 const challengeRoutes = require('./challenges');
+const reportRoutes = require('./reports');
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.use('/series', seriesRoutes);
 router.use('/messages', messageRoutes);
 router.use('/leaderboard', leaderboardRoutes);
 router.use('/challenges', challengeRoutes);
+router.use('/', reportRoutes);
 
 // Health check (no auth required)
 router.get('/health', (req, res) => {

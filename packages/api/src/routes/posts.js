@@ -33,7 +33,8 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
     offset: parseInt(offset, 10) || 0,
     submolt,
     time,
-    flair
+    flair,
+    viewerId: req.agent ? req.agent.id : null
   });
   
   paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });

@@ -91,7 +91,8 @@ router.get('/:name/feed', optionalAuth, asyncHandler(async (req, res) => {
   const posts = await PostService.getBySubmolt(req.params.name, {
     sort,
     limit: Math.min(parseInt(limit, 10), 100),
-    offset: parseInt(offset, 10) || 0
+    offset: parseInt(offset, 10) || 0,
+    viewerId: req.agent ? req.agent.id : null
   });
   
   paginated(res, posts, { limit: parseInt(limit, 10), offset: parseInt(offset, 10) || 0 });
