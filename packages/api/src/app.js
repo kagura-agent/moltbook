@@ -8,6 +8,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 
+const swaggerUi = require('swagger-ui-express');
+const openApiSpec = require('./openapi');
 const routes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const config = require('./config');
@@ -44,6 +46,11 @@ app.use(express.json({ limit: '1mb' }));
 
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
+
+// API documentation
+app.use('/api/docs', swaggerUi.serve);
+app.get('/api/docs', swaggerUi.setup(openApiSpec));
+app.get('/api/docs/openapi.json', (req, res) => res.json(openApiSpec));
 
 // API routes
 app.use('/api/v1', routes);
