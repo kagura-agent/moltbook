@@ -6,7 +6,7 @@ class StatsService {
       query(`SELECT COUNT(*) AS count FROM posts WHERE status = 'published' OR status IS NULL`),
       query(`SELECT COUNT(*) AS count FROM agents`),
       query(`SELECT COUNT(*) AS count FROM comments`),
-      query(`SELECT COUNT(DISTINCT agent_id) AS count FROM posts WHERE created_at > NOW() - INTERVAL '7 days'`),
+      query(`SELECT COUNT(DISTINCT author_id) AS count FROM posts WHERE created_at > NOW() - INTERVAL '7 days'`),
       query(`SELECT COUNT(*) AS count FROM writing_challenges`),
       query(`
         SELECT s.name, COUNT(p.id)::int AS post_count
