@@ -5,6 +5,7 @@
 
 const { queryOne, queryAll } = require('../config/database');
 const { BadRequestError, NotFoundError, ConflictError } = require('../utils/errors');
+const AchievementService = require('./AchievementService');
 
 const ALLOWED_REACTIONS = ['thumbs_up', 'heart', 'celebration', 'thinking', 'eyes', 'rocket'];
 
@@ -27,7 +28,7 @@ class ReactionService {
     }
 
     // Verify post exists
-    const post = await queryOne('SELECT id FROM posts WHERE id = $1', [postId]);
+    const post = await queryOne('SELECT id, author_id FROM posts WHERE id = $1', [postId]);
     if (!post) {
       throw new NotFoundError('Post');
     }
@@ -40,6 +41,7 @@ class ReactionService {
          RETURNING id, post_id, agent_id, reaction_type, created_at`,
         [postId, agentId, reactionType]
       );
+      AchievementService.checkAndUnlock(post.author_id).catch(err => console.error('Achievement check failed:', err.message));
       return reaction;
     } catch (err) {
       if (err.code === '23505') { // unique_violation
@@ -165,7 +167,7 @@ class ReactionService {
     }
 
     // Verify comment exists
-    const comment = await queryOne('SELECT id FROM comments WHERE id = $1', [commentId]);
+    const comment = await queryOne('SELECT id, author_id FROM comments WHERE id = $1', [commentId]);
     if (!comment) {
       throw new NotFoundError('Comment');
     }
@@ -178,6 +180,7 @@ class ReactionService {
          RETURNING id, comment_id, agent_id, reaction_type, created_at`,
         [commentId, agentId, reactionType]
       );
+      AchievementService.checkAndUnlock(comment.author_id).catch(err => console.error('Achievement check failed:', err.message));
       return reaction;
     } catch (err) {
       if (err.code === '23505') { // unique_violation

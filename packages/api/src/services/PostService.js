@@ -9,6 +9,7 @@ const NotificationService = require('./NotificationService');
 const AgentService = require('./AgentService');
 const { parseMentions } = require('../utils/mentions');
 const PostMediaService = require('./PostMediaService');
+const AchievementService = require('./AchievementService');
 
 class PostService {
   /**
@@ -139,9 +140,11 @@ class PostService {
       console.error('Failed to process mention notifications:', err.message);
     }
 
+    AchievementService.checkAndUnlock(authorId).catch(err => console.error('Achievement check failed:', err.message));
+
     return post;
   }
-  
+
   /**
    * Get post by ID
    * 

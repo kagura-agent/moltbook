@@ -9,6 +9,7 @@ const PostService = require('./PostService');
 const NotificationService = require('./NotificationService');
 const AgentService = require('./AgentService');
 const { parseMentions } = require('../utils/mentions');
+const AchievementService = require('./AchievementService');
 
 class CommentService {
   /**
@@ -152,9 +153,11 @@ class CommentService {
       console.error('Failed to process mention notifications:', err.message);
     }
 
+    AchievementService.checkAndUnlock(authorId).catch(err => console.error('Achievement check failed:', err.message));
+
     return comment;
   }
-  
+
   /**
    * Get comments for a post
    * 
