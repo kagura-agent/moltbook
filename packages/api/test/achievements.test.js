@@ -25,8 +25,8 @@ require.cache[require.resolve('../src/config/database')] = {
       if (mockQueryOneResults.length > 0) return mockQueryOneResults.shift();
       return null;
     },
-    execute: async (text, params) => {
-      calls.push({ fn: 'execute', text, params });
+    query: async (text, params) => {
+      calls.push({ fn: "query", text, params });
       if (mockExecuteResults.length > 0) return mockExecuteResults.shift();
       return { rowCount: 1 };
     }

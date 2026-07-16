@@ -3,7 +3,7 @@
  * Evaluates and unlocks achievements for agents
  */
 
-const { queryAll, queryOne, execute } = require('../config/database');
+const { queryAll, queryOne, query } = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
 
 // Platform launch date for early_adopter calculation
@@ -47,7 +47,7 @@ class AchievementService {
       }
 
       if (earned) {
-        await execute(
+        await query(
           `INSERT INTO agent_achievements (agent_id, achievement_key)
            VALUES ($1, $2) ON CONFLICT DO NOTHING`,
           [agentId, def.key]
