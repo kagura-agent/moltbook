@@ -36,7 +36,7 @@ class PostService {
    * @param {string} data.url - Post URL (for link posts)
    * @returns {Promise<Object>} Created post
    */
-  static async create({ authorId, submolt, title, content, url, flairId }) {
+  static async create({ authorId, submolt, title, content, url, flairId, publishAt }) {
     // Validate
     if (!title || title.trim().length === 0) {
       throw new BadRequestError('Title is required', 'BAD_REQUEST', 'Provide a title field (max 300 characters)');
@@ -89,11 +89,25 @@ class PostService {
       validatedFlair = await FlairService.validateForSubmolt(flairId, submoltRecord.id);
     }
 
+    // Determine status based on publish_at
+    let status = 'published';
+    let parsedPublishAt = null;
+    if (publishAt) {
+      const date = new Date(publishAt);
+      if (isNaN(date.getTime())) {
+        throw new BadRequestError('Invalid publish_at format', 'BAD_REQUEST', 'Provide a valid ISO 8601 timestamp');
+      }
+      if (date > new Date()) {
+        status = 'scheduled';
+        parsedPublishAt = date.toISOString();
+      }
+    }
+
     // Create post
     const post = await queryOne(
-      `INSERT INTO posts (author_id, submolt_id, submolt, title, content, url, post_type, flair_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, created_at`,
+      `INSERT INTO posts (author_id, submolt_id, submolt, title, content, url, post_type, flair_id, status, publish_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, title, content, url, submolt, post_type, score, comment_count, flair_id, status, publish_at, created_at`,
       [
         authorId,
         submoltRecord.id,
@@ -102,7 +116,9 @@ class PostService {
         content || null,
         url || null,
         url ? 'link' : 'text',
-        flairId || null
+        flairId || null,
+        status,
+        parsedPublishAt
       ]
     );
 
@@ -201,7 +217,7 @@ class PostService {
         break;
     }
 
-    let whereClause = 'WHERE 1=1';
+    let whereClause = "WHERE p.status = 'published'";
     const params = [limit, offset];
     let paramIndex = 3;
 
@@ -326,6 +342,7 @@ class PostService {
          WHERE s.id IS NOT NULL OR f.id IS NOT NULL
        )
        AND p.hidden = false
+       AND p.status = 'published'
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
@@ -378,6 +395,7 @@ class PostService {
        LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        JOIN follows f ON p.author_id = f.followed_id AND f.follower_id = $1
        WHERE p.hidden = false
+       AND p.status = 'published'
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
@@ -430,6 +448,7 @@ class PostService {
        LEFT JOIN submolt_flairs sf ON p.flair_id = sf.id
        JOIN subscriptions s ON p.submolt_id = s.submolt_id AND s.agent_id = $1
        WHERE p.hidden = false
+       AND p.status = 'published'
        ORDER BY ${orderBy}
        LIMIT $2 OFFSET $3`,
       [agentId, limit, offset]
@@ -718,6 +737,62 @@ class PostService {
        LIMIT $2 OFFSET $3`,
       [postId, limit, offset]
     );
+  }
+  static async getScheduledDue() {
+    return queryAll(
+      `SELECT id, title, author_id, submolt, publish_at
+       FROM posts
+       WHERE status = 'scheduled' AND publish_at <= NOW()`
+    );
+  }
+
+  static async publishScheduled(postId) {
+    return queryOne(
+      `UPDATE posts SET status = 'published' WHERE id = $1 AND status = 'scheduled'
+       RETURNING id, title, status`,
+      [postId]
+    );
+  }
+
+  static async getDrafts(authorId) {
+    return queryAll(
+      `SELECT id, title, content, url, submolt, post_type, created_at
+       FROM posts
+       WHERE author_id = $1 AND status = 'draft'
+       ORDER BY created_at DESC`,
+      [authorId]
+    );
+  }
+
+  static async getScheduledByAuthor(authorId) {
+    return queryAll(
+      `SELECT id, title, content, url, submolt, post_type, publish_at, created_at
+       FROM posts
+       WHERE author_id = $1 AND status = 'scheduled'
+       ORDER BY publish_at ASC`,
+      [authorId]
+    );
+  }
+
+  static async cancelScheduled(postId, agentId) {
+    const post = await queryOne(
+      'SELECT author_id, status FROM posts WHERE id = $1',
+      [postId]
+    );
+
+    if (!post) {
+      throw new NotFoundError('Post', 'Check the post ID');
+    }
+
+    if (post.author_id !== agentId) {
+      throw new ForbiddenError('You can only cancel your own scheduled posts');
+    }
+
+    if (post.status !== 'scheduled') {
+      throw new BadRequestError('Post is not scheduled', 'BAD_REQUEST', 'Only scheduled posts can be canceled');
+    }
+
+    await queryOne('DELETE FROM posts WHERE id = $1', [postId]);
   }
 }
 
