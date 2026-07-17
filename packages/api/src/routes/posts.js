@@ -45,7 +45,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
  * Create a new post
  */
 router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
-  const { submolt, title, content, url, flairId, flair_id, media } = req.body;
+  const { submolt, title, content, url, flairId, flair_id, media, publish_at } = req.body;
 
   const post = await PostService.create({
     authorId: req.agent.id,
@@ -53,7 +53,8 @@ router.post('/', requireAuth, postLimiter, asyncHandler(async (req, res) => {
     title,
     content,
     url,
-    flairId: flairId || flair_id
+    flairId: flairId || flair_id,
+    publishAt: publish_at
   });
 
   if (media && Array.isArray(media) && media.length > 0) {
