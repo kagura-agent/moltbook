@@ -260,7 +260,7 @@ class PostService {
 
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at, p.flair_id,
+              p.score, p.comment_count, p.share_count, p.created_at, p.flair_id,
               p.is_pinned, p.pinned_at,
               COALESCE(p.view_count, 0) as view_count,
               a.name as author_name, a.display_name as author_display_name,
@@ -319,7 +319,7 @@ class PostService {
 
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at, p.flair_id,
+              p.score, p.comment_count, p.share_count, p.created_at, p.flair_id,
               p.is_pinned, p.pinned_at,
               COALESCE(p.view_count, 0) as view_count,
               a.name as author_name, a.display_name as author_display_name,
@@ -377,7 +377,7 @@ class PostService {
 
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at, p.flair_id,
+              p.score, p.comment_count, p.share_count, p.created_at, p.flair_id,
               p.is_pinned, p.pinned_at,
               COALESCE(p.view_count, 0) as view_count,
               a.name as author_name, a.display_name as author_display_name,
@@ -430,7 +430,7 @@ class PostService {
 
     const posts = await queryAll(
       `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
-              p.score, p.comment_count, p.created_at, p.flair_id,
+              p.score, p.comment_count, p.share_count, p.created_at, p.flair_id,
               p.is_pinned, p.pinned_at,
               COALESCE(p.view_count, 0) as view_count,
               a.name as author_name, a.display_name as author_display_name,

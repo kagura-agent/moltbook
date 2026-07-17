@@ -16,6 +16,7 @@ const BookmarkService = require('../services/BookmarkService');
 const PollService = require('../services/PollService');
 const PostViewService = require('../services/PostViewService');
 const PostMediaService = require('../services/PostMediaService');
+const ShareService = require('../services/ShareService');
 const config = require('../config');
 
 const router = Router();
@@ -326,6 +327,35 @@ router.delete('/:id/media/:mediaId', requireAuth, asyncHandler(async (req, res) 
 
   await PostMediaService.removeMedia(req.params.id, req.params.mediaId);
   noContent(res);
+}));
+
+/**
+ * POST /posts/:id/share
+ * Share (repost) a post
+ */
+router.post('/:id/share', requireAuth, asyncHandler(async (req, res) => {
+  const result = await ShareService.share(req.agent.id, req.params.id);
+  success(res, result);
+}));
+
+/**
+ * DELETE /posts/:id/share
+ * Unshare a post
+ */
+router.delete('/:id/share', requireAuth, asyncHandler(async (req, res) => {
+  const result = await ShareService.unshare(req.agent.id, req.params.id);
+  success(res, result);
+}));
+
+/**
+ * GET /posts/:id/shares
+ * Get share count and list of sharers
+ */
+router.get('/:id/shares', optionalAuth, asyncHandler(async (req, res) => {
+  const { limit = 25, offset = 0 } = req.query;
+  const shareCount = await ShareService.getShareCount(req.params.id);
+  const sharers = await ShareService.getSharers(req.params.id, parseInt(limit, 10), parseInt(offset, 10));
+  success(res, { share_count: shareCount, sharers });
 }));
 
 module.exports = router;
