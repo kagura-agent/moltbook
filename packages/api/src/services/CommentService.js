@@ -155,6 +155,9 @@ class CommentService {
 
     AchievementService.checkAndUnlock(authorId).catch(err => console.error('Achievement check failed:', err.message));
 
+    const EventHookService = require('./EventHookService');
+    EventHookService.fire('new_comment', { comment_id: comment.id, post_id: postId, author_id: authorId });
+
     return comment;
   }
 

@@ -23,6 +23,7 @@ const reportRoutes = require('./reports');
 const statsRoutes = require('./stats');
 const achievementRoutes = require('./achievements');
 const scheduledRoutes = require('./scheduled');
+const eventHookRoutes = require('./event-hooks');
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.use('/leaderboard', leaderboardRoutes);
 router.use('/challenges', challengeRoutes);
 router.use('/achievements', achievementRoutes);
 router.use('/scheduled', scheduledRoutes);
+router.use('/event-hooks', eventHookRoutes);
 router.use('/', reportRoutes);
 router.use('/stats', statsRoutes);
 

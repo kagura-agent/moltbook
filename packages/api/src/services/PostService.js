@@ -158,6 +158,9 @@ class PostService {
 
     AchievementService.checkAndUnlock(authorId).catch(err => console.error('Achievement check failed:', err.message));
 
+    const EventHookService = require('./EventHookService');
+    EventHookService.fire('new_post', { post_id: post.id, author_id: authorId });
+
     return post;
   }
 

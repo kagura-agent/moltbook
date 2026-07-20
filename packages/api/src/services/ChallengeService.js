@@ -35,6 +35,9 @@ class ChallengeService {
       [title.trim(), description || null, submolt, flairId, start.toISOString(), end.toISOString(), startsAt && new Date(startsAt) > new Date() ? 'draft' : 'active', createdBy]
     );
 
+    const EventHookService = require('./EventHookService');
+    EventHookService.fire('challenge_start', { challenge_id: challenge.id, title: challenge.title });
+
     return challenge;
   }
 

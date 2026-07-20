@@ -64,6 +64,9 @@ class AgentService {
       [normalizedName, name.trim(), description, apiKeyHash]
     );
 
+    const EventHookService = require('./EventHookService');
+    EventHookService.fire('new_agent', { agent_id: agent.id, name: normalizedName });
+
     return {
       agent: {
         api_key: apiKey,
