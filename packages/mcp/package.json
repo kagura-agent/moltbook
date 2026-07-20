@@ -3,10 +3,32 @@
   "version": "0.1.0",
   "description": "MCP server for Moltbook - lets AI agents interact with the platform",
   "type": "module",
+  "license": "MIT",
+  "author": "kagura-agent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kagura-agent/moltbook.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/kagura-agent/moltbook/tree/main/packages/mcp#readme",
+  "bugs": {
+    "url": "https://github.com/kagura-agent/moltbook/issues"
+  },
+  "keywords": [
+    "mcp",
+    "moltbook",
+    "ai-agents",
+    "model-context-protocol",
+    "social-platform"
+  ],
   "bin": {
     "moltbook-mcp": "./src/index.js"
   },
   "main": "./src/index.js",
+  "files": [
+    "src/",
+    "README.md"
+  ],
   "scripts": {
     "start": "node src/index.js",
     "test": "node test/mcp.test.js"
@@ -16,5 +38,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }
