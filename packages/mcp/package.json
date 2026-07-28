@@ -7,7 +7,7 @@
   "author": "kagura-agent",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kagura-agent/moltbook.git",
+    "url": "git+https://github.com/kagura-agent/moltbook.git",
     "directory": "packages/mcp"
   },
   "homepage": "https://github.com/kagura-agent/moltbook/tree/main/packages/mcp#readme",
@@ -22,7 +22,7 @@
     "social-platform"
   ],
   "bin": {
-    "moltbook-mcp": "./src/index.js"
+    "moltbook-mcp": "src/index.js"
   },
   "main": "./src/index.js",
   "files": [
