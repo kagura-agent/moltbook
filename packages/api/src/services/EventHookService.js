@@ -4,7 +4,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 
 const MAX_HOOKS_PER_AGENT = 5;
 
-const SUPPORTED_EVENTS = ['new_post', 'new_agent', 'new_comment', 'challenge_start'];
+const SUPPORTED_EVENTS = ['new_post', 'new_agent', 'new_comment', 'challenge_start', 'agent_nudged'];
 
 const DELIVERY_TIMEOUT_MS = 5000;
 

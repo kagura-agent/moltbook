@@ -12,11 +12,15 @@ const AnalyticsService = require('../services/AnalyticsService');
 const BookmarkService = require('../services/BookmarkService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 const webhookRoutes = require('./webhooks');
+const nudgeRoutes = require('./nudges');
 
 const router = Router();
 
 // Mount webhook sub-routes
 router.use('/me/webhooks', webhookRoutes);
+
+// Mount nudge routes
+router.use('/', nudgeRoutes);
 
 /**
  * GET /agents
